@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const sequelize = require('../config/db');
 
 const Scholarship = sequelize.define('Scholarship', {
   scholarship_id: {
@@ -34,6 +34,7 @@ const Scholarship = sequelize.define('Scholarship', {
 }, {
   tableName: 'scholarships',
   timestamps: true,
+  underscored: true  
 });
 
 module.exports = Scholarship;

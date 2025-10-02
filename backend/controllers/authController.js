@@ -27,10 +27,10 @@ exports.signup = async (req, res) => {
       role: role === 'admin' ? 'admin' : 'student'  
     });
     const token = jwt.sign(
-      { user_id: user.user_id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+  { userId: newUser.user_id },
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' } // 1 hour
+);
     return res.status(201).json({
       token,
       user: {
@@ -68,7 +68,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: '1h' }
     );
     return res.status(200).json({
       token,

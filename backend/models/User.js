@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const sequelize = require('../config/db');
 
 const User = sequelize.define('User', {
   user_id: {
@@ -28,7 +28,7 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   gpa: {
-    type: DataTypes.DECIMAL(3,2),
+    type: DataTypes.DECIMAL(3, 2),
     allowNull: true,
   },
   location: {
@@ -36,11 +36,11 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   preferred_fields: {
-    type: DataTypes.TEXT, 
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   role: {
-    type: DataTypes.ENUM('student','admin'),
+    type: DataTypes.ENUM('student', 'admin'),
     allowNull: false,
     defaultValue: 'student',
   },
