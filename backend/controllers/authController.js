@@ -27,9 +27,9 @@ exports.signup = async (req, res) => {
       role: role === 'admin' ? 'admin' : 'student'  
     });
     const token = jwt.sign(
-  { userId: newUser.user_id },
+  { userId: User.user_id },
   process.env.JWT_SECRET,
-  { expiresIn: '1h' } // 1 hour
+  { expiresIn: '1h' } 
 );
     return res.status(201).json({
       token,

@@ -28,7 +28,7 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   gpa: {
-    type: DataTypes.DECIMAL(3, 2),
+    type: DataTypes.INTEGER,
     allowNull: true,
   },
   location: {

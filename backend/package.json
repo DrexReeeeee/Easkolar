@@ -20,6 +20,7 @@
     "bytes": "^3.1.2",
     "call-bind-apply-helpers": "^1.0.2",
     "call-bound": "^1.0.4",
+    "cheerio": "^1.1.2",
     "chokidar": "^3.6.0",
     "combined-stream": "^1.0.8",
     "concat-map": "^0.0.1",
@@ -148,9 +149,9 @@
     "wkx": "^0.5.0"
   },
   "scripts": {
-  "start": "node server.js",
-  "dev": "nodemon server.js"
-},
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

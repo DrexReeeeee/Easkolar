@@ -15,10 +15,12 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const chatBotRouter = require('./routes/chatBotRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/chatbot', chatBotRouter);
 
 // Test route
 app.get('/', (req, res) => {
