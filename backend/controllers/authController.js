@@ -6,7 +6,7 @@ require('dotenv').config();
 // Signup
 exports.signup = async (req, res) => {
   const {
-    name, email, password, course, gpa, location, preferred_fields, role,
+    first_name, last_name, email, password, course, gpa, location, preferred_fields, role,
     full_name, birth_date, gender,
     address_region, address_province, address_city,
     contact_number, school, year_level, strand_or_course,
@@ -17,8 +17,8 @@ exports.signup = async (req, res) => {
   } = req.body;
 
   try {
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({ message: 'First name, last name, email, and password are required' });
     }
 
     const existing = await User.findOne({ where: { email } });
@@ -26,7 +26,8 @@ exports.signup = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
-      name,
+      first_name,
+      last_name,
       email,
       password: hashed,
       course, gpa, location, preferred_fields,

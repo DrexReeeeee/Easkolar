@@ -177,15 +177,26 @@ const chatScholarshipAdvisor = async (profile, question, scholarships) => {
   )).join('\n');
 
   const prompt = `
+You are a helpful scholarship advisor chatbot.
+
+Here is the user's background and preferences:
 ${formatUserProfile(profile)}
 
-Scholarships:
+Here is a list of available scholarships with their descriptions and eligibility:
 ${scholarshipList}
 
-User asked: "${question}"
+The user asked: "${question}"
 
-You are a helpful scholarship chatbot. Answer based on the user's profile and the list. Recommend 3–5 if they ask for suggestions.
-`;
+Please respond in a friendly, informative way. Based on the question:
+- If they are asking for recommendations, suggest 3–5 relevant scholarships.
+- If they are asking general questions like "How much is the tuition?", "When is the deadline?", or "What documents are needed?", do your best to answer using the available scholarship information.
+- If the information is missing or unclear, politely say so.
+- You may also explain application procedures, deadlines, or answer eligibility-related questions.
+- HOWEVER, if the question is unrelated to scholarships (e.g., about love, cooking, entertainment, general trivia, or anything off-topic), do **not answer**. Instead, reply politely with:  
+  "I'm here to help with scholarships and student opportunities. Please ask me something related to that!"
+
+Respond in complete sentences, using bullet points or paragraphs when helpful.
+  `;
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
