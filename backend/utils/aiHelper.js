@@ -2,13 +2,10 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 require('dotenv').config();
 
-//extracts full page text and sends to OpenRouter AI for structured field extraction
 const extractScholarshipDetailsFromWebsite = async (websiteLink) => {
   try {
     const { data } = await axios.get(websiteLink, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0'
-      },
+      headers: { 'User-Agent': 'Mozilla/5.0' },
       timeout: 10000
     });
 
@@ -85,27 +82,48 @@ const generateSummary = async (description, eligibility, websiteLink = '') => {
   }
 };
 
-const getAIEligibilityCheck = async (profile, scholarship) => {
-  const prompt = `User Profile:
-Name: ${profile.name}
+// Format the user's full profile for all AI prompts
+const formatUserProfile = (profile) => `
+User Profile:
+Name: ${profile.full_name || profile.name}
+Birthdate: ${profile.birth_date}
+Gender: ${profile.gender}
+Location: ${profile.address_region}, ${profile.address_province}, ${profile.address_city}
+Contact: ${profile.contact_number}
 Email: ${profile.email}
-Course: ${profile.course}
+School: ${profile.school}
+Course/Strand: ${profile.course} / ${profile.strand_or_course}
+Year Level: ${profile.year_level}
 GPA: ${profile.gpa}
-Location: ${profile.location}
-Preferred Fields: ${profile.preferred_fields}
+Academic Awards: ${profile.academic_awards}
+Parents’ Occupation: ${profile.parents_occupation}
+Parents’ Education: ${profile.parents_education}
+Household Income Range: ${profile.household_income_range}
+Siblings in School: ${profile.siblings_in_school}
+Preferred Fields: ${profile.preferred_fields}, ${profile.field_of_interest}
+Leadership Experience: ${profile.leadership_experience}
+Volunteer Work: ${profile.volunteer_work}
+Special Skills: ${profile.special_skills}
+Special Sector Membership: ${profile.special_sector_membership}
+`;
+
+const getAIEligibilityCheck = async (profile, scholarship) => {
+  const prompt = `
+${formatUserProfile(profile)}
 
 Scholarship:
 Name: ${scholarship.name}
 Description: ${scholarship.description}
 Eligibility: ${scholarship.eligibility}
 
-Question: Is this user eligible for this scholarship? Answer Yes or No and explain why in a few sentences.`;
+Question: Is this user eligible for this scholarship? Answer Yes or No and explain why in 1–2 sentences.
+  `;
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'openai/gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are an assistant that determines scholarship eligibility.' },
+        { role: 'system', content: 'You determine if a student is eligible for a scholarship.' },
         { role: 'user', content: prompt }
       ]
     }, {
@@ -123,25 +141,20 @@ Question: Is this user eligible for this scholarship? Answer Yes or No and expla
 };
 
 const matchScholarshipsAI = async (profile, scholarships) => {
-  const prompt = `User Profile:
-Name: ${profile.name}
-Course: ${profile.course}
-GPA: ${profile.gpa}
-Location: ${profile.location}
-Preferred Fields: ${profile.preferred_fields}
+  const prompt = `
+${formatUserProfile(profile)}
 
 Here are a list of scholarships (with name, description, and eligibility):
 ${scholarships.map(s => `- ${s.name}: ${s.description}. Eligibility: ${s.eligibility}`).join('\n')}
 
-Based on the profile, rank the most relevant scholarships (max 5) with a short explanation for each match.
-Format as a list with ranking and reason.
+Based on the profile, rank the top 3–5 most relevant scholarships and explain briefly why each one fits.
 `;
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'openai/gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are a helpful assistant that ranks scholarships based on user profiles.' },
+        { role: 'system', content: 'You rank scholarships based on user background and preferences.' },
         { role: 'user', content: prompt }
       ]
     }, {
@@ -164,19 +177,14 @@ const chatScholarshipAdvisor = async (profile, question, scholarships) => {
   )).join('\n');
 
   const prompt = `
-User Profile:
-Name: ${profile.name}
-Course: ${profile.course}
-GPA: ${profile.gpa}
-Location: ${profile.location}
-Preferred Fields: ${profile.preferred_fields}
+${formatUserProfile(profile)}
 
 Scholarships:
 ${scholarshipList}
 
 User asked: "${question}"
 
-You are a helpful scholarship chatbot. Answer the user's question based on their profile and the scholarships. Recommend only 3–5 if they ask for suggestions.
+You are a helpful scholarship chatbot. Answer based on the user's profile and the list. Recommend 3–5 if they ask for suggestions.
 `;
 
   try {
