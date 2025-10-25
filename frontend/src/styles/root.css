@@ -1,0 +1,179 @@
+/* src/styles/root.css */
+
+/* ================================
+   GLOBAL DESIGN SYSTEM (ROOT)
+   ================================ */
+
+/* -------------------------------
+   Color Palette
+   ------------------------------- */
+   /* src/styles/root.css */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #4299e1;
+  --primary-gradient: linear-gradient(135deg, #4299e1, #667eea);
+  --secondary-color: #5a67d8;
+  --text-color: #2d3748;
+  --text-muted: #4a5568;
+  --background-color: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --transition: all 0.3s ease;
+}
+
+/* -------------------------------
+   Universal Reset
+   ------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+html, body {
+  font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+  background: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+/* -------------------------------
+   Global Layout Container
+   ------------------------------- */
+.container,
+.layout-container {
+  width: 100%;
+  max-width: 1280px; /* ✅ standard web app width */
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Center content vertically & horizontally if needed */
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* -------------------------------
+   Standard Section Spacing
+   ------------------------------- */
+.section {
+  padding: 4rem 0;
+}
+
+.section-sm {
+  padding: 2rem 0;
+}
+
+.section-lg {
+  padding: 6rem 0;
+}
+
+/* -------------------------------
+   Headings and Typography
+   ------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* -------------------------------
+   Buttons (global baseline)
+   ------------------------------- */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #3182ce, #5a67d8);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+/* -------------------------------
+   Responsive Scaling Rules
+   ------------------------------- */
+@media (max-width: 1280px) {
+  .container {
+    max-width: 1100px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    max-width: 900px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 600px;
+    padding: 0 1rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  p {
+    font-size: 0.95rem;
+  }
+}

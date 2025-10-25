@@ -1,0 +1,157 @@
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f8f9fa;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #2a2d43;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.sidebar-logo h2 {
+  color: #f4b400;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s ease;
+}
+
+.sidebar-menu li:hover {
+  background-color: #3c4062;
+}
+
+.sidebar-footer button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  background: #f4b400;
+  color: black;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-footer button:hover {
+  opacity: 0.9;
+}
+
+/* Main content */
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Header */
+.header {
+  background-color: white;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Dashboard main area */
+.dashboard-main {
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Cards section */
+.card-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.info-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.info-card h3 {
+  margin-bottom: 0.5rem;
+  color: #2a2d43;
+}
+
+.info-card p {
+  color: #555;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Buttons */
+.bookmark-btn,
+.remove-btn {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  width: fit-content;
+}
+
+.bookmark-btn:hover,
+.remove-btn:hover {
+  background: #0056b3;
+}
+
+.bookmark-btn:disabled {
+  background: #28a745;
+  cursor: default;
+}
+
+/* Loading text */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.3rem;
+  color: #555;
+}
