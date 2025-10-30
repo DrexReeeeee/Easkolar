@@ -2,9 +2,11 @@
 
 This document outlines the folder and file structure of the Easkolar project, a scholarship platform with backend and frontend components.
 
-```
-Easkolar/
+EaseKolar/
+├── .gitignore                       # Git ignore rules
 ├── easekolar_db.sql                 # Database schema file
+├── PROJECT_STRUCTURE.md             # Project structure documentation
+├── TODO.md                          # Task list
 ├── backend/                         # Backend (Node.js/Express)
 │   ├── package.json                 # Backend dependencies and scripts
 │   ├── package-lock.json            # Lockfile for dependencies
@@ -30,7 +32,6 @@ Easkolar/
 │   └── utils/
 │       └── aiHelper.js              # AI utility functions
 └── frontend/                        # Frontend (React)
-    ├── .gitignore                   # Git ignore rules
     ├── package.json                 # Frontend dependencies and scripts
     ├── package-lock.json            # Lockfile for dependencies
     ├── README.md                    # Frontend README
@@ -40,7 +41,10 @@ Easkolar/
     │   ├── robots.txt               # Robots file
     │   └── assets/                  # Additional assets
     │       ├── favicon.ico          # Favicon
-    │       └── LOGO.png             # Logo image
+    │       ├── logo-trans.png       # Transparent logo image
+    │       ├── LOGO.png             # Logo image
+    │       ├── signin-img.png       # Sign-in page image
+    │       └── signup-img.png       # Sign-up page image
     └── src/                         # Source code
         ├── App.css                  # Main app styles
         ├── App.js                   # Main app component
@@ -54,8 +58,11 @@ Easkolar/
         ├── setupTests.js            # Test setup
         ├── styles/                  # Stylesheets
         │   ├── home.css             # Home page styles
+        │   ├── main.css             # Main styles
         │   ├── navbar.css           # Navbar styles
-        │   └── root.css             # Root styles
+        │   ├── root.css             # Root styles
+        │   ├── signin.css           # Sign-in page styles
+        │   └── signup.css           # Sign-up page styles
         └── pages/                   # Page components
             ├── admin/               # Admin pages
             │   └── dashboard.js     # Admin dashboard
@@ -76,8 +83,9 @@ Easkolar/
                     ├── dashboard.css    # Dashboard styles
                     ├── bookmarks.css    # Bookmarks styles
                     ├── chatbot.css      # Chatbot styles
-                    └── scholarships.css # Scholarships styles
-```
+                    ├── header.css       # Header styles
+                    ├── scholarships.css # Scholarships styles
+                    └── sidebar.css      # Sidebar styles
 
 ## Description
 

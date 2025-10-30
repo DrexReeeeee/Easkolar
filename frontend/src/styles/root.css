@@ -1,179 +1,94 @@
-/* src/styles/root.css */
-
-/* ================================
-   GLOBAL DESIGN SYSTEM (ROOT)
-   ================================ */
+/*// src/styles/root.css*/
+/* Google font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Rammetto+One&display=swap');
 
 /* -------------------------------
-   Color Palette
-   ------------------------------- */
-   /* src/styles/root.css */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+   Theme / Tokens
+---------------------------------*/
 :root {
-  --primary-color: #4299e1;
+  --primary-bg: #f6f6f6;
+  --secondary-bg: #a9bdf9;
+  --tertiary-bg: #e2a9f1;
+
+  --primary-accent: #4e577c;
+  --secondary-accent: #6d1983;
+  --tert-accent: #1c2d5f;
   --primary-gradient: linear-gradient(135deg, #4299e1, #667eea);
   --secondary-color: #5a67d8;
-  --text-color: #2d3748;
+
+  --text-color: #1a202c;
   --text-muted: #4a5568;
+
   --background-color: #ffffff;
   --border-color: rgba(0, 0, 0, 0.05);
   --shadow-color: rgba(0, 0, 0, 0.08);
-  --radius-md: 8px;
-  --radius-lg: 16px;
-  --transition: all 0.3s ease;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+
+  --primary-font: 'Poppins', sans-serif;
+  --secondary-font: 'Rammetto One', sans-serif;
+
+  --font-size-base: 15px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 34px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 600;
+
+  --btn-transition: none;
+  --btn-signup-bottom-shadow: 0 6px 14px rgba(46, 64, 83, 0.18);
+
+  /* max content width (matching your example) */
+  --max-width: 1280px;
 }
 
 /* -------------------------------
-   Universal Reset
-   ------------------------------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  transition: var(--transition);
-}
-
+   Global reset & base
+---------------------------------*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  font-family: "Poppins", "Segoe UI", Arial, sans-serif;
-  background: var(--background-color);
+  /*height: 100%;*/
+  background: var(--primary-bg);
   color: var(--text-color);
-  line-height: 1.6;
+  font-family: var(--primary-font);
+  font-size: var(--font-size-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  overflow-y: hidden;
 }
 
-/* -------------------------------
-   Global Layout Container
-   ------------------------------- */
-.container,
-.layout-container {
+/* Page wrapper (centers content & enforces max-width) */
+.page-wrapper {
+  max-width: var(--max-width);
   width: 100%;
-  max-width: 1280px; /* ✅ standard web app width */
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  position: relative;
 }
 
-/* Center content vertically & horizontally if needed */
-.center-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+/* app-container kept for compatibility with previous code */
+.app-container { max-width: var(--max-width); margin: 0 auto; position: relative; }
 
-/* -------------------------------
-   Standard Section Spacing
-   ------------------------------- */
-.section {
-  padding: 4rem 0;
-}
+/* Typography helpers */
+h1,h2,h3,h4,h5,h6 { color: var(--text-color); font-weight: 600; }
+p { color: var(--text-muted); }
 
-.section-sm {
-  padding: 2rem 0;
-}
+/* Buttons baseline (global) - stripped of transitions per request */
+button, .btn { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
-.section-lg {
-  padding: 6rem 0;
-}
+/* small utility spacing */
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
 
-/* -------------------------------
-   Headings and Typography
-   ------------------------------- */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--text-color);
-  font-weight: 600;
-}
+/* small scrollbar-hide convenience (example) */
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 
-h1 {
-  font-size: 2.5rem;
-}
-
-h2 {
-  font-size: 2rem;
-}
-
-h3 {
-  font-size: 1.5rem;
-}
-
-p {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
-/* -------------------------------
-   Buttons (global baseline)
-   ------------------------------- */
-.btn {
-  display: inline-block;
-  padding: 0.6rem 1.5rem;
-  font-weight: 500;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.btn-primary {
-  background: var(--primary-gradient);
-  color: #fff;
-  border: none;
-  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #3182ce, #5a67d8);
-  transform: translateY(-2px);
-}
-
-.btn-outline {
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  background: transparent;
-}
-
-.btn-outline:hover {
-  background: var(--primary-color);
-  color: #fff;
-}
-
-/* -------------------------------
-   Responsive Scaling Rules
-   ------------------------------- */
+/* responsive fallback: if viewport narrower than max-width, page-wrapper naturally shrinks */
 @media (max-width: 1280px) {
-  .container {
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .container {
-    max-width: 900px;
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    max-width: 600px;
-    padding: 0 1rem;
-  }
-
-  h1 {
-    font-size: 2rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  p {
-    font-size: 0.95rem;
-  }
+  .page-wrapper { padding-left: 12px; padding-right: 12px; }
 }

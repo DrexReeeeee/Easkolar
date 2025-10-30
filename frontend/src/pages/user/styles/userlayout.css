@@ -1,0 +1,54 @@
+.user-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--primary-bg);
+}
+
+.layout-content {
+  flex: 1;
+  margin-left: 250px; /* Same as sidebar width */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* Allow scrolling */
+  overflow-y: auto;
+}
+
+.user-main {
+  flex: 1;
+  padding: 2rem;
+  background: var(--primary-bg);
+  /* Ensure content can scroll under header */
+  margin-top: 70px;
+}
+
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .layout-content {
+    margin-left: 0;
+  }
+  
+  .user-main {
+    padding: 1.5rem;
+    height: calc(100vh - 70px);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .user-main {
+    padding: 1rem;
+    height: calc(100vh - 60px);
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .user-main {
+    padding: 0.75rem;
+    height: calc(100vh - 60px);
+  }
+}

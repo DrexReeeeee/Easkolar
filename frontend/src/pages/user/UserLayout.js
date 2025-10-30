@@ -1,22 +1,25 @@
-// src/pages/user/UserLayout.js
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "./components/sidebar";
 import Header from "./components/header";
-import "./styles/dashboard.css";
+import Sidebar from "./components/sidebar";
+import "./styles/userlayout.css";
 
 export default function UserLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const user = JSON.parse(localStorage.getItem("user"));
 
   return (
-    <div className="dashboard-container">
+    <div className="user-layout">
       <Sidebar />
-      <div className="dashboard-content">
-        <Header user={user} />
-        <div className="dashboard-main">
-          {/* Child pages (Dashboard, Bookmarks, Scholarships) will render here */}
+      <div className="layout-content">
+        <Header 
+          user={user} 
+          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
+        <main className="user-main">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

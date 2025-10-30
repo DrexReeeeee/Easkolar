@@ -2,25 +2,24 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
-{/* landing components */}
+// Landing Components
 import Navbar from "./components/navbar";
 import Home from "./pages/home";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 
-{/* User Pages */}
+// User Pages
 import UserLayout from "./pages/user/UserLayout";
 import UserDashboard from "./pages/user/dashboard";
 import BookmarksPage from "./pages/user/bookmarks";
 import ScholarshipsPage from "./pages/user/scholarships";
 import ChatbotPage from "./pages/user/Chatbot";
 
-{/* Admin Pages */}
+// Admin Pages
 import AdminDashboard from "./pages/admin/dashboard";
 
-{/* styles */}
+// Global Styles
 import "./styles/root.css";
-
 
 function App() {
   return (
@@ -28,14 +27,14 @@ function App() {
       <AppContent />
 
       <Routes>
-        {/* Landing Page */}
+        {/* Landing Pages */}
         <Route path="/" element={<Home />} />
 
-        {/* Authentication Pages */}
+        {/* Authentication */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* User Layout with Sidebar/Header shared */}
+        {/* User Layout (with sidebar/header) */}
         <Route path="/user" element={<UserLayout />}>
           <Route path="dashboard" element={<UserDashboard />} />
           <Route path="bookmarks" element={<BookmarksPage />} />
@@ -43,22 +42,21 @@ function App() {
           <Route path="chatbot" element={<ChatbotPage />} />
         </Route>
 
-        {/* Admin Dashboard */}
+        {/* Admin Section */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );
 }
 
+// Hide Navbar on authenticated pages
 function AppContent() {
   const location = useLocation();
-  const isAuthenticatedPage = location.pathname.startsWith('/user') || location.pathname.startsWith('/admin');
+  const isAuthenticated =
+    location.pathname.startsWith("/user") ||
+    location.pathname.startsWith("/admin");
 
-  return (
-    <>
-      {!isAuthenticatedPage && <Navbar />}
-    </>
-  );
+  return !isAuthenticated ? <Navbar /> : null;
 }
 
 export default App;

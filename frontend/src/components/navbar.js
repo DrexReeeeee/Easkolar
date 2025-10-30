@@ -1,48 +1,69 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import "../styles/root.css";
 import "../styles/navbar.css";
+
+import { FaBars, FaTimes } from "react-icons/fa";
 
 export default function Navbar() {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const isActiveLink = (path) => {
-    return location.pathname === path ? "active" : "";
-  };
+  const isActiveLink = (path) => (location.pathname === path ? "active" : "");
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        {/* Left: Logo */}
-        <Link className="navbar-brand" to="/">
+        {/* Left: Logo & Brand - Keeping your exact structure */}
+        <Link to="/" className="navbar-brand" onClick={closeMenu}>
           <img
-            src="/assets/LOGO.png"
+            src="/assets/logo-trans.png"
             alt="EaseKolar Logo"
-            className="me-2"
-            style={{ width: "40px", height: "40px" }}
+            className="brand-logo"
           />
-          <span className="fw-bold text-primary fs-4">EaseKolar</span>
+          <span className="brand-text">
+            <span className="brand-ease">Ease</span>
+            <span className="brand-kolar">Kolar</span>
+          </span>
         </Link>
 
-        {/* Center: Navigation Links */}
-        <ul className="navbar-nav">
-          <li className="nav-item">
-            <Link className={`nav-link ${isActiveLink("/")}`} to="/">
-              Home
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link className={`nav-link ${isActiveLink("/scholarships")}`} to="/scholarships">
-              Scholarships
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link className={`nav-link ${isActiveLink("/about")}`} to="/about">
-              About
-            </Link>
-          </li>
-        </ul>
+        {/* Center: Navigation Links - Enhanced but familiar */}
+        <div className={`navbar-links-wrapper ${isMenuOpen ? "mobile-open" : ""}`}>
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <Link 
+                className={`nav-link ${isActiveLink("/")}`} 
+                to="/"
+                onClick={closeMenu}
+              >
+                Home
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link
+                className={`nav-link ${isActiveLink("/scholarships")}`}
+                to="/scholarships"
+                onClick={closeMenu}
+              >
+                Scholarships
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link 
+                className={`nav-link ${isActiveLink("/about")}`} 
+                to="/about"
+                onClick={closeMenu}
+              >
+                About
+              </Link>
+            </li>
+          </ul>
+        </div>
 
-        {/* Right: Action Buttons */}
+        {/* Right: Action Buttons - Enhanced interactions */}
         <div className="navbar-actions">
           <Link to="/signin" className="btn-outline-primary">
             Sign In
@@ -51,6 +72,14 @@ export default function Navbar() {
             Sign Up
           </Link>
         </div>
+
+        {/* Mobile Menu Toggle */}
+        <button className="mobile-toggle" onClick={toggleMenu}>
+          {isMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
+
+        {/* Mobile Overlay */}
+        {isMenuOpen && <div className="mobile-overlay" onClick={closeMenu}></div>}
       </div>
     </nav>
   );
