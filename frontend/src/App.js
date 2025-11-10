@@ -14,6 +14,7 @@ import UserDashboard from "./pages/user/dashboard";
 import BookmarksPage from "./pages/user/bookmarks";
 import ScholarshipsPage from "./pages/user/scholarships";
 import ChatbotPage from "./pages/user/Chatbot";
+import UserProfile from "./pages/user/profile";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/dashboard";
@@ -40,6 +41,7 @@ function App() {
           <Route path="bookmarks" element={<BookmarksPage />} />
           <Route path="scholarships" element={<ScholarshipsPage />} />
           <Route path="chatbot" element={<ChatbotPage />} />
+          <Route path="profile" element={<UserProfile />} />
         </Route>
 
         {/* Admin Section */}

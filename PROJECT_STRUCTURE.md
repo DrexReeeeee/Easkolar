@@ -53,12 +53,10 @@ EaseKolar/
         │   └── navbar.js            # Navigation bar component
         ├── index.css                # Global styles
         ├── index.js                 # App entry point
-        ├── logo.svg                 # React logo
         ├── reportWebVitals.js       # Performance monitoring
         ├── setupTests.js            # Test setup
         ├── styles/                  # Stylesheets
         │   ├── home.css             # Home page styles
-        │   ├── main.css             # Main styles
         │   ├── navbar.css           # Navbar styles
         │   ├── root.css             # Root styles
         │   ├── signin.css           # Sign-in page styles
