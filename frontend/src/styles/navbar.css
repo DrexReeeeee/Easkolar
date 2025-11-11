@@ -104,7 +104,6 @@
 
 .nav-link:hover {
   color: var(--primary-accent) !important;
-  background: rgba(78, 87, 124, 0.08);
   transform: translateY(-1px);
 }
 
