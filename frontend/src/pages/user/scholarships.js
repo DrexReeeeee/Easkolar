@@ -1,3 +1,4 @@
+/* /frontend/src/pages/user/scholarships.js */
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./styles/scholarships.css";
@@ -8,15 +9,16 @@ export default function ScholarshipsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  // TEMPORARY MOCK — replace this with your actual logged-in user ID
-  const userId = "671fabcde1234567890";
+  const token = localStorage.getItem("token");
+  const axiosConfig = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-  // Fetch all scholarships
   useEffect(() => {
     const fetchScholarships = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/scholarships");
+        const res = await axios.get("http://localhost:5001/api/scholarships", axiosConfig);
         setScholarships(res.data.scholarships || []);
       } catch (err) {
         console.error("Error fetching scholarships:", err);
@@ -28,13 +30,11 @@ export default function ScholarshipsPage() {
     fetchScholarships();
   }, []);
 
-  // Fetch user's bookmarked scholarships
   useEffect(() => {
     const fetchBookmarks = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5001/api/bookmarks/user/${userId}`
-        );
+        if (!token) return;
+        const res = await axios.get("http://localhost:5001/api/bookmarks/user/me", axiosConfig);
         const bookmarked = res.data.bookmarks.map((b) => b.scholarshipId);
         setBookmarkedIds(bookmarked);
       } catch (err) {
@@ -42,27 +42,38 @@ export default function ScholarshipsPage() {
       }
     };
     fetchBookmarks();
-  }, [userId]);
+  }, [token]);
 
-  // Handle bookmark toggle
+  useEffect(() => {
+    const pageWrapper = document.querySelector(".page-wrapper");
+
+    if (selectedScholarship) {
+      document.body.style.overflow = "hidden";
+      if (pageWrapper) pageWrapper.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+      if (pageWrapper) pageWrapper.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+      if (pageWrapper) pageWrapper.style.overflow = "auto";
+    };
+  }, [selectedScholarship]);
+
   const handleBookmark = async (scholarshipId) => {
+    if (!token) {
+      alert("Please log in to bookmark scholarships.");
+      return;
+    }
+
     try {
       const isBookmarked = bookmarkedIds.includes(scholarshipId);
-
       if (isBookmarked) {
-        // Remove bookmark
-        await axios.delete(
-          `http://localhost:5001/api/bookmarks/${userId}/${scholarshipId}`
-        );
-        setBookmarkedIds((prev) =>
-          prev.filter((id) => id !== scholarshipId)
-        );
+        await axios.delete(`http://localhost:5001/api/bookmarks/${scholarshipId}`, axiosConfig);
+        setBookmarkedIds((prev) => prev.filter((id) => id !== scholarshipId));
       } else {
-        // Add bookmark
-        await axios.post("http://localhost:5001/api/bookmarks", {
-          userId,
-          scholarshipId,
-        });
+        await axios.post("http://localhost:5001/api/bookmarks", { scholarshipId }, axiosConfig);
         setBookmarkedIds((prev) => [...prev, scholarshipId]);
       }
     } catch (err) {
@@ -70,110 +81,356 @@ export default function ScholarshipsPage() {
     }
   };
 
-  return (
-    <div className="scholarships-page">
-      <h1>🎓 Explore Scholarships</h1>
-      <p>Browse available scholarships. Click any card for more details or bookmark them for later.</p>
+  // Enhanced filtering with multiple criteria
+  const filteredScholarships = scholarships.filter((sch) => {
+    const matchesSearch = sch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         sch.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const today = new Date();
+    const hasDeadline = sch.deadline && new Date(sch.deadline) > today;
 
-      {loading ? (
-        <div className="loading">Loading scholarships...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : scholarships.length === 0 ? (
-        <div className="no-scholarships">
-          No scholarships available at the moment.
+    switch (filter) {
+      case "deadline":
+        return hasDeadline && matchesSearch;
+      case "bookmarked":
+        return bookmarkedIds.includes(sch.scholarship_id) && matchesSearch;
+      case "active":
+        return hasDeadline && matchesSearch;
+      default:
+        return matchesSearch;
+    }
+  });
+
+  // Sort by deadline (closest first)
+  const sortedScholarships = [...filteredScholarships].sort((a, b) => {
+    if (!a.deadline) return 1;
+    if (!b.deadline) return -1;
+    return new Date(a.deadline) - new Date(b.deadline);
+  });
+
+  const getDaysUntilDeadline = (deadline) => {
+    if (!deadline) return null;
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  return (
+    <div className="page-wrapper">
+      <div className="scholarships-page">
+
+        {/* Enhanced Toolbar */}
+        <div className="toolbar-section">
+          <div className="toolbar-main">
+            <button className="primary-btn find-scholarship-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              Find My Scholarship
+            </button>
+
+            <div className="filter-group">
+              <button className="filter-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                Filter
+              </button>
+              <select
+                className="filter-dropdown"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">All Scholarships</option>
+                <option value="active">Active Opportunities</option>
+                <option value="deadline">Upcoming Deadlines</option>
+                <option value="bookmarked">Bookmarked</option>
+              </select>
+            </div>
+
+            <div className="search-container">
+              <div className="search-box">
+                <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search scholarships"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button className="deadlines-btn">Deadlines</button>
+          </div>
         </div>
-      ) : (
-        <div className="scholarship-grid">
-          {scholarships.map((sch) => (
-            <div
-              key={sch._id}
-              className="scholarship-card"
-              onClick={() => setSelectedScholarship(sch)}
-            >
-              <div className="card-header">
-                <h3>{sch.name}</h3>
+
+        {/* Content Section */}
+        <div className="scholarships-content">
+          {loading ? (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading scholarships...</p>
+            </div>
+          ) : error ? (
+            <div className="error-state">
+              <svg className="error-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <h3>Unable to Load Scholarships</h3>
+              <p>{error}</p>
+              <button 
+                className="primary-btn"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredScholarships.length === 0 ? (
+            <div className="empty-state">
+              <svg className="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+              </svg>
+              <h3>No scholarships found</h3>
+              <p>Try adjusting your search or filter criteria</p>
+              <button 
+                className="secondary-btn"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilter("all");
+                }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Section Headers */}
+              <div className="section-header">
+                <h2 className="section-title">Matched Scholarships</h2>
+                <button className="see-all-btn">See All</button>
+              </div>
+
+              {/* Scholarships Grid */}
+              <div className="scholarship-grid">
+                {sortedScholarships.slice(0, 3).map((sch) => {
+                  const daysUntilDeadline = getDaysUntilDeadline(sch.deadline);
+                  const isUrgent = daysUntilDeadline && daysUntilDeadline <= 7;
+                  
+                  return (
+                    <div
+                      key={sch.scholarship_id}
+                      className="scholarship-card matched"
+                    >
+                      <div className="card-header">
+                        <h3 className="scholarship-name">{sch.name}</h3>
+                        <div className="card-actions">
+                          <button
+                            className="icon-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="1"/>
+                              <circle cx="19" cy="12" r="1"/>
+                              <circle cx="5" cy="12" r="1"/>
+                            </svg>
+                          </button>
+                          <button
+                            className={`bookmark-icon ${bookmarkedIds.includes(sch.scholarship_id) ? "active" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBookmark(sch.scholarship_id);
+                            }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(sch.scholarship_id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                              <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="scholar-info-section">
+                        <h4 className="section-label">Scholar Info</h4>
+                        <p className="scholar-description">
+                          {sch.description.length > 150
+                            ? sch.description.substring(0, 150) + "..."
+                            : sch.description}
+                        </p>
+                      </div>
+
+                      <div className="card-footer">
+                        <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>
+                          View More
+                        </button>
+                        <button className="match-btn">Match</button>
+                      </div>
+
+                      {sch.deadline && (
+                        <div className="deadline-badge">
+                          {new Date(sch.deadline).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Recommendations Section */}
+              {sortedScholarships.length > 3 && (
+                <>
+                  <div className="section-header">
+                    <h2 className="section-title">Recommendations</h2>
+                    <button className="see-all-btn">See All</button>
+                  </div>
+
+                  <div className="scholarship-grid">
+                    {sortedScholarships.slice(3).map((sch) => {
+                      const daysUntilDeadline = getDaysUntilDeadline(sch.deadline);
+                      
+                      return (
+                        <div
+                          key={sch.scholarship_id}
+                          className="scholarship-card"
+                        >
+                          <div className="card-header">
+                            <h3 className="scholarship-name">{sch.name}</h3>
+                            <div className="card-actions">
+                              <button
+                                className="icon-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="1"/>
+                                  <circle cx="19" cy="12" r="1"/>
+                                  <circle cx="5" cy="12" r="1"/>
+                                </svg>
+                              </button>
+                              <button
+                                className={`bookmark-icon ${bookmarkedIds.includes(sch.scholarship_id) ? "active" : ""}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBookmark(sch.scholarship_id);
+                                }}
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(sch.scholarship_id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                                  <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="scholar-info-section">
+                            <h4 className="section-label">Scholar Info</h4>
+                            <p className="scholar-description">
+                              {sch.description.length > 150
+                                ? sch.description.substring(0, 150) + "..."
+                                : sch.description}
+                            </p>
+                          </div>
+
+                          <div className="card-footer">
+                            <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>
+                              View More
+                            </button>
+                            <button className="match-btn">Match</button>
+                          </div>
+
+                          {sch.deadline && (
+                            <div className="deadline-badge">
+                              {new Date(sch.deadline).toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Enhanced Modal */}
+        {selectedScholarship && (
+          <div className="modal-overlay" onClick={() => setSelectedScholarship(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{selectedScholarship.name}</h2>
                 <button
-                  className={`bookmark-btn ${
-                    bookmarkedIds.includes(sch._id) ? "active" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent modal open
-                    handleBookmark(sch._id);
-                  }}
+                  className="close-btn"
+                  onClick={() => setSelectedScholarship(null)}
                 >
-                  {bookmarkedIds.includes(sch._id) ? "★" : "☆"}
+                  ×
                 </button>
               </div>
 
-              <p className="short-desc">
-                {sch.description.length > 120
-                  ? sch.description.substring(0, 120) + "..."
-                  : sch.description}
-              </p>
-              <p className="deadline">
-                <strong>Deadline:</strong>{" "}
-                {sch.deadline
-                  ? new Date(sch.deadline).toLocaleDateString()
-                  : "N/A"}
-              </p>
+              <div className="modal-body">
+                <div className="scholarship-details-grid">
+                  <div className="detail-item">
+                    <label>Provider</label>
+                    <p>{selectedScholarship.provider || "Not specified"}</p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Amount</label>
+                    <p className="amount">{selectedScholarship.amount || "Varies"}</p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Deadline</label>
+                    <p className={`deadline ${getDaysUntilDeadline(selectedScholarship.deadline) <= 7 ? 'urgent' : ''}`}>
+                      {selectedScholarship.deadline
+                        ? new Date(selectedScholarship.deadline).toLocaleDateString()
+                        : "Rolling"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h4>Eligibility Criteria</h4>
+                  <p>{selectedScholarship.eligibility || "No specific eligibility criteria provided."}</p>
+                </div>
+
+                <div className="detail-section">
+                  <h4>Description</h4>
+                  <p>{selectedScholarship.description}</p>
+                </div>
+
+                {selectedScholarship.website_link && (
+                  <div className="action-section">
+                    <a
+                      href={selectedScholarship.website_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="apply-btn primary-btn"
+                    >
+                      Visit Scholarship Website
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* MODAL */}
-      {selectedScholarship && (
-        <div
-          className="modal-overlay"
-          onClick={() => setSelectedScholarship(null)}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>{selectedScholarship.name}</h2>
-            <p>
-              <strong>Provider:</strong> {selectedScholarship.provider || "N/A"}
-            </p>
-            <p>
-              <strong>Amount:</strong>{" "}
-              {selectedScholarship.amount || "Not specified"}
-            </p>
-            <p>
-              <strong>Deadline:</strong>{" "}
-              {selectedScholarship.deadline
-                ? new Date(selectedScholarship.deadline).toLocaleDateString()
-                : "N/A"}
-            </p>
-            <p>
-              <strong>Eligibility:</strong>{" "}
-              {selectedScholarship.eligibility || "N/A"}
-            </p>
-            <p className="desc">
-              <strong>Description:</strong>{" "}
-              {selectedScholarship.description}
-            </p>
-
-            {selectedScholarship.website_link && (
-              <a
-                href={selectedScholarship.website_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="apply-btn"
-              >
-                Visit Scholarship Website
-              </a>
-            )}
-            <button
-              className="close-btn"
-              onClick={() => setSelectedScholarship(null)}
-            >
-              Close
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
