@@ -3,16 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./styles/chatbot.css";
 
-/**
- * Revised integration notes:
- * - Preserves your original logo path: /assets/logo-trans.png
- * - Preserves the same SVG icons you used (no replacements),
- *   keeping stroke/fill and viewBox identical to your snippets.
- * - Keeps your improved UI/UX (welcome screen, suggestions, avatars, timestamps, auto-resize)
- *   while restoring the safe backend handling from the first version.
- * - Adds a few defensive checks for API shape and auth errors without changing your backend API contract.
- */
-
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");

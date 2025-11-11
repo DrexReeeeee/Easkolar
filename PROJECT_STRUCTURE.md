@@ -76,14 +76,17 @@ EaseKolar/
                 ├── bookmarks.js     # User bookmarks page
                 ├── scholarships.js  # User scholarships page
                 ├── Chatbot.js       # User chatbot page
+                ├── profile.js       # User profile page
                 ├── UserLayout.js    # User layout component
                 └── styles/          # User-specific styles
-                    ├── dashboard.css    # Dashboard styles
                     ├── bookmarks.css    # Bookmarks styles
                     ├── chatbot.css      # Chatbot styles
+                    ├── dashboard.css    # Dashboard styles
                     ├── header.css       # Header styles
+                    ├── profile.css      # Profile styles
                     ├── scholarships.css # Scholarships styles
-                    └── sidebar.css      # Sidebar styles
+                    ├── sidebar.css      # Sidebar styles
+                    └── userlayout.css   # User layout styles
 
 ## Description
 
