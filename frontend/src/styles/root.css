@@ -1,0 +1,100 @@
+/*// src/styles/root.css*/
+/* Google font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Rammetto+One&display=swap');
+
+/* -------------------------------
+   Theme / Tokens
+---------------------------------*/
+:root {
+  --primary-bg: #f6f6f6;
+  --secondary-bg: #a9bdf9;
+  --tertiary-bg: #e2a9f1;
+
+  --primary-accent: #4e577c;
+  --secondary-accent: #6d1983;
+  --tert-accent: #1c2d5f;
+  --primary-gradient: linear-gradient(135deg, #4299e1, #667eea);
+  --secondary-color: #5a67d8;
+
+  --text-color: #1a202c;
+  --text-muted: #4a5568;
+
+  --background-color: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --shadow-color: rgba(0, 0, 0, 0.08);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+
+  --primary-font: 'Poppins', sans-serif;
+  --secondary-font: 'Rammetto One', sans-serif;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-xxl: 28px;
+  
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --btn-transition: none;
+  --btn-signup-bottom-shadow: 0 6px 14px rgba(46, 64, 83, 0.18);
+
+  /* max content width (matching your example) */
+  --max-width: 1280px;
+}
+
+/* -------------------------------
+   Global reset & base
+---------------------------------*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  /*height: 100%;*/
+  background: var(--primary-bg);
+  color: var(--text-color);
+  font-family: var(--primary-font);
+  font-size: var(--font-size-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Page wrapper (centers content & enforces max-width) */
+.page-wrapper {
+  max-width: var(--max-width);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  position: relative;
+}
+
+/* app-container kept for compatibility with previous code */
+.app-container { max-width: var(--max-width); margin: 0 auto; position: relative; }
+
+/* Typography helpers */
+h1,h2,h3,h4,h5,h6 { color: var(--text-color); font-weight: 600; }
+p { color: var(--text-muted); }
+
+/* Buttons baseline (global) - stripped of transitions per request */
+button, .btn { cursor: pointer; font-family: inherit; border: none; outline: none; }
+
+/* small utility spacing */
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+
+/* small scrollbar-hide convenience (example) */
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+/* responsive fallback: if viewport narrower than max-width, page-wrapper naturally shrinks */
+@media (max-width: 1280px) {
+  .page-wrapper { padding-left: 12px; padding-right: 12px; }
+}

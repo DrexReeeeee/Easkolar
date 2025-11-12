@@ -1,0 +1,18 @@
+.bookmark-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s ease;
+}
+
+.bookmark-btn.active {
+  color: gold;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
