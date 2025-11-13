@@ -172,31 +172,71 @@ Based on the profile, rank the top 3–5 most relevant scholarships and explain 
 };
 
 const chatScholarshipAdvisor = async (profile, question, scholarships) => {
-  const scholarshipList = scholarships.slice(0, 30).map(s => (
-    `- ${s.name}:\nDescription: ${s.description || 'N/A'}\nEligibility: ${s.eligibility || 'N/A'}\n`
-  )).join('\n');
+
+  const formatUserProfileHTML = (profile) => `
+    <strong>Name:</strong> ${profile.full_name || profile.name}<br>
+    <strong>Birthdate:</strong> ${profile.birth_date}<br>
+    <strong>Gender:</strong> ${profile.gender}<br>
+    <strong>Location:</strong> ${profile.address_region}, ${profile.address_province}, ${profile.address_city}<br>
+    <strong>Contact:</strong> ${profile.contact_number}<br>
+    <strong>Email:</strong> ${profile.email}<br>
+    <strong>School:</strong> ${profile.school}<br>
+    <strong>Course/Strand:</strong> ${profile.course} / ${profile.strand_or_course}<br>
+    <strong>Year Level:</strong> ${profile.year_level}<br>
+    <strong>GPA:</strong> ${profile.gpa}<br>
+    <strong>Academic Awards:</strong> ${profile.academic_awards}<br>
+    <strong>Parents’ Occupation:</strong> ${profile.parents_occupation}<br>
+    <strong>Parents’ Education:</strong> ${profile.parents_education}<br>
+    <strong>Household Income Range:</strong> ${profile.household_income_range}<br>
+    <strong>Siblings in School:</strong> ${profile.siblings_in_school}<br>
+    <strong>Preferred Fields:</strong> ${profile.preferred_fields}, ${profile.field_of_interest}<br>
+    <strong>Leadership Experience:</strong> ${profile.leadership_experience}<br>
+    <strong>Volunteer Work:</strong> ${profile.volunteer_work}<br>
+    <strong>Special Skills:</strong> ${profile.special_skills}<br>
+    <strong>Special Sector Membership:</strong> ${profile.special_sector_membership}<br>
+  `;
+
+  const scholarshipListHTML = scholarships.slice(0, 30).map(s => (
+    `<li>
+      <strong>${s.name}</strong><br>
+      <strong>Description:</strong> ${s.description || 'N/A'}<br>
+      <strong>Eligibility:</strong> ${s.eligibility || 'N/A'}<br>
+      ${s.website ? `<strong>Website:</strong> <a href="${s.website}" target="_blank">${s.website}</a><br>` : ''}
+    </li>`
+  )).join('');
 
   const prompt = `
-You are a helpful scholarship advisor chatbot.
+You are a scholarship advisor chatbot with a mission to provide **highly accurate and relevant scholarship suggestions** based on the user's profile.
 
-Here is the user's background and preferences:
-${formatUserProfile(profile)}
+User Profile:
+<pre>${formatUserProfileHTML(profile)}</pre>
 
-Here is a list of available scholarships with their descriptions and eligibility:
-${scholarshipList}
+Available Scholarships:
+<ul>
+${scholarshipListHTML}
+</ul>
 
-The user asked: "${question}"
+User asked: "<strong>${question}</strong>"
 
-Please respond in a friendly, informative way. Based on the question:
-- If they are asking for recommendations, suggest 3–5 relevant scholarships.
-- If they are asking general questions like "How much is the tuition?", "When is the deadline?", or "What documents are needed?", do your best to answer using the available scholarship information.
-- If the information is missing or unclear, politely say so.
-- You may also explain application procedures, deadlines, or answer eligibility-related questions.
-- HOWEVER, if the question is unrelated to scholarships (e.g., about love, cooking, entertainment, general trivia, or anything off-topic), do **not answer**. Instead, reply politely with:  
-  "I'm here to help with scholarships and student opportunities. Please ask me something related to that!"
+Instructions for your response:
+1. ONLY suggest scholarships that **truly match the user's profile and preferences**.
+2. Suggest **3–5 scholarships maximum**, if applicable.
+3. For each suggestion, include:
+   - Name (bold)
+   - Description
+   - Eligibility criteria
+   - Website link if available
+4. Use **HTML formatting**: 
+   - <strong> for bold text
+   - <ul> and <li> for lists
+   - double <br> for line breaks
+5. If the user asks general questions (deadlines, documents, tuition), answer using available scholarship info in bullet points.
+6. If information is missing or unclear, say politely that it is unavailable.
+7. Do NOT answer unrelated questions (love, cooking, trivia, etc.). Respond politely:  
+   "I'm here to help with scholarships and student opportunities. Please ask something related to that!"
 
-Respond in complete sentences, using bullet points or paragraphs when helpful.
-  `;
+Make sure suggestions are 100% relevant, accurate, and formatted clearly in HTML.
+`;
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
@@ -212,10 +252,12 @@ Respond in complete sentences, using bullet points or paragraphs when helpful.
       }
     });
 
+    // Return HTML-formatted AI response
     return response.data.choices[0].message.content;
+
   } catch (error) {
     console.error('Scholarship chatbot error:', error.message);
-    return 'Sorry, I couldn’t process your request right now.';
+    return '<p>Sorry, I couldn’t process your request right now.</p>';
   }
 };
 

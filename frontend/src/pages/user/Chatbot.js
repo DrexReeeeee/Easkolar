@@ -217,7 +217,10 @@ const Chatbot = () => {
                   )}
 
                   <div className={`message ${msg.sender === "user" ? "user-message" : "bot-message"}`}>
-                    <div className="message-content">{msg.text}</div>
+                   <div
+                    className="message-content"
+                    dangerouslySetInnerHTML={{ __html: msg.text }}
+                ></div>
                     {msg.timestamp && (
                       <div className="message-time">{formatTime(msg.timestamp)}</div>
                     )}
