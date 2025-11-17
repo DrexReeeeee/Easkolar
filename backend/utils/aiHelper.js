@@ -201,7 +201,7 @@ const chatScholarshipAdvisor = async (profile, question, scholarships) => {
       <strong>${s.name}</strong><br>
       <strong>Description:</strong> ${s.description || 'N/A'}<br>
       <strong>Eligibility:</strong> ${s.eligibility || 'N/A'}<br>
-      ${s.website ? `<strong>Website:</strong> <a href="${s.website}" target="_blank">${s.website}</a><br>` : ''}
+      ${s.website_link ? `<strong>Website:</strong> <a href="${s.website_link}" target="_blank">${s.website_link}</a><br>` : ''}
     </li>`
   )).join('');
 
@@ -229,7 +229,7 @@ Instructions for your response:
 4. Use **HTML formatting**: 
    - <strong> for bold text
    - <ul> and <li> for lists
-   - double <br> for line breaks
+   - double <br><br> for line breaks
 5. If the user asks general questions (deadlines, documents, tuition), answer using available scholarship info in bullet points.
 6. If information is missing or unclear, say politely that it is unavailable.
 7. Do NOT answer unrelated questions (love, cooking, trivia, etc.). Respond politely:  
@@ -252,7 +252,6 @@ Make sure suggestions are 100% relevant, accurate, and formatted clearly in HTML
       }
     });
 
-    // Return HTML-formatted AI response
     return response.data.choices[0].message.content;
 
   } catch (error) {
