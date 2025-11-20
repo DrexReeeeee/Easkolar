@@ -50,7 +50,7 @@ exports.getBookmarks = async (req, res) => {
           model: Scholarship,
         }
       ],
-      // IMPORTANT: order by actual DB column name (created_at) to avoid "Unknown column ... createdAt"
+
       order: [['created_at', 'DESC']]
     });
     return res.status(200).json({ bookmarks });
