@@ -12,9 +12,11 @@ const Bookmark = sequelize.define('Bookmark', {
 }, {
   tableName: 'bookmarks',
   timestamps: true,
+  createdAt: 'created_at', // map createdAt to created_at column
+  updatedAt: false         // you don't have updated_at in the table
 });
 
-
+// associations (keep these as-is)
 User.hasMany(Bookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 Bookmark.belongsTo(User, { foreignKey: 'user_id' });
 

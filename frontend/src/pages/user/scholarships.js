@@ -35,7 +35,7 @@ export default function ScholarshipsPage() {
       try {
         if (!token) return;
         const res = await axios.get("http://localhost:5001/api/bookmarks/user/me", axiosConfig);
-        const bookmarked = res.data.bookmarks.map((b) => b.scholarshipId);
+        const bookmarked = res.data.bookmarks.map((b) => Number(b.scholarshipId || b.scholarship_id));
         setBookmarkedIds(bookmarked);
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
@@ -67,24 +67,25 @@ export default function ScholarshipsPage() {
       return;
     }
 
+    const id = Number(scholarshipId);
     try {
-      const isBookmarked = bookmarkedIds.includes(scholarshipId);
+      const isBookmarked = bookmarkedIds.includes(id);
+
       if (isBookmarked) {
-        await axios.delete(`http://localhost:5001/api/bookmarks/${scholarshipId}`, axiosConfig);
-        setBookmarkedIds((prev) => prev.filter((id) => id !== scholarshipId));
+        await axios.delete(`http://localhost:5001/api/bookmarks/${id}`, axiosConfig);
+        setBookmarkedIds((prev) => prev.filter((x) => x !== id));
       } else {
-        await axios.post("http://localhost:5001/api/bookmarks", { scholarshipId }, axiosConfig);
-        setBookmarkedIds((prev) => [...prev, scholarshipId]);
+        await axios.post("http://localhost:5001/api/bookmarks", { scholarship_id: id }, axiosConfig);
+        setBookmarkedIds((prev) => [...prev, id]);
       }
     } catch (err) {
       console.error("Error updating bookmark:", err);
     }
   };
 
-  // Enhanced filtering with multiple criteria
   const filteredScholarships = scholarships.filter((sch) => {
     const matchesSearch = sch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         sch.description.toLowerCase().includes(searchQuery.toLowerCase());
+                          sch.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     const today = new Date();
     const hasDeadline = sch.deadline && new Date(sch.deadline) > today;
@@ -93,7 +94,7 @@ export default function ScholarshipsPage() {
       case "deadline":
         return hasDeadline && matchesSearch;
       case "bookmarked":
-        return bookmarkedIds.includes(sch.scholarship_id) && matchesSearch;
+        return bookmarkedIds.includes(Number(sch.scholarship_id)) && matchesSearch;
       case "active":
         return hasDeadline && matchesSearch;
       default:
@@ -101,7 +102,6 @@ export default function ScholarshipsPage() {
     }
   });
 
-  // Sort by deadline (closest first)
   const sortedScholarships = [...filteredScholarships].sort((a, b) => {
     if (!a.deadline) return 1;
     if (!b.deadline) return -1;
@@ -121,7 +121,7 @@ export default function ScholarshipsPage() {
     <div className="page-wrapper">
       <div className="scholarships-page">
 
-        {/* Enhanced Toolbar */}
+        {/* Toolbar */}
         <div className="toolbar-section">
           <div className="toolbar-main">
             <button className="primary-btn find-scholarship-btn">
@@ -170,7 +170,7 @@ export default function ScholarshipsPage() {
           </div>
         </div>
 
-        {/* Content Section */}
+        {/* Scholarships Content */}
         <div className="scholarships-content">
           {loading ? (
             <div className="loading-state">
@@ -186,10 +186,7 @@ export default function ScholarshipsPage() {
               </svg>
               <h3>Unable to Load Scholarships</h3>
               <p>{error}</p>
-              <button 
-                className="primary-btn"
-                onClick={() => window.location.reload()}
-              >
+              <button className="primary-btn" onClick={() => window.location.reload()}>
                 Try Again
               </button>
             </div>
@@ -201,58 +198,39 @@ export default function ScholarshipsPage() {
               </svg>
               <h3>No scholarships found</h3>
               <p>Try adjusting your search or filter criteria</p>
-              <button 
-                className="secondary-btn"
-                onClick={() => {
-                  setSearchQuery("");
-                  setFilter("all");
-                }}
-              >
+              <button className="secondary-btn" onClick={() => { setSearchQuery(""); setFilter("all"); }}>
                 Clear Filters
               </button>
             </div>
           ) : (
             <>
-              {/* Section Headers */}
               <div className="section-header">
                 <h2 className="section-title">Matched Scholarships</h2>
                 <button className="see-all-btn">See All</button>
               </div>
 
-              {/* Scholarships Grid */}
               <div className="scholarship-grid">
                 {sortedScholarships.slice(0, 3).map((sch) => {
                   const daysUntilDeadline = getDaysUntilDeadline(sch.deadline);
-                  const isUrgent = daysUntilDeadline && daysUntilDeadline <= 7;
-                  
                   return (
-                    <div
-                      key={sch.scholarship_id}
-                      className="scholarship-card matched"
-                    >
+                    <div key={sch.scholarship_id} className="scholarship-card matched">
                       <div className="card-header">
                         <h3 className="scholarship-name">{sch.name}</h3>
                         <div className="card-actions">
-                          <button
-                            className="icon-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
+                          <button className="icon-btn" onClick={(e) => e.stopPropagation()}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <circle cx="12" cy="12" r="1"/>
                               <circle cx="19" cy="12" r="1"/>
                               <circle cx="5" cy="12" r="1"/>
                             </svg>
                           </button>
+
+                          {/* Bookmark Button */}
                           <button
-                            className={`bookmark-icon ${bookmarkedIds.includes(sch.scholarship_id) ? "active" : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleBookmark(sch.scholarship_id);
-                            }}
+                            className={`bookmark-icon ${bookmarkedIds.includes(Number(sch.scholarship_id)) ? "active" : ""}`}
+                            onClick={(e) => { e.stopPropagation(); handleBookmark(sch.scholarship_id); }}
                           >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(sch.scholarship_id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(Number(sch.scholarship_id)) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                               <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
                             </svg>
                           </button>
@@ -262,26 +240,18 @@ export default function ScholarshipsPage() {
                       <div className="scholar-info-section">
                         <h4 className="section-label">Scholar Info</h4>
                         <p className="scholar-description">
-                          {sch.description.length > 150
-                            ? sch.description.substring(0, 150) + "..."
-                            : sch.description}
+                          {sch.description.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
                         </p>
                       </div>
 
                       <div className="card-footer">
-                        <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>
-                          View More
-                        </button>
+                        <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>View More</button>
                         <button className="match-btn">Match</button>
                       </div>
 
                       {sch.deadline && (
                         <div className="deadline-badge">
-                          {new Date(sch.deadline).toLocaleDateString('en-US', { 
-                            month: 'long', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                          })}
+                          {new Date(sch.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}
                     </div>
@@ -298,71 +268,49 @@ export default function ScholarshipsPage() {
                   </div>
 
                   <div className="scholarship-grid">
-                    {sortedScholarships.slice(3).map((sch) => {
-                      const daysUntilDeadline = getDaysUntilDeadline(sch.deadline);
-                      
-                      return (
-                        <div
-                          key={sch.scholarship_id}
-                          className="scholarship-card"
-                        >
-                          <div className="card-header">
-                            <h3 className="scholarship-name">{sch.name}</h3>
-                            <div className="card-actions">
-                              <button
-                                className="icon-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                }}
-                              >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="1"/>
-                                  <circle cx="19" cy="12" r="1"/>
-                                  <circle cx="5" cy="12" r="1"/>
-                                </svg>
-                              </button>
-                              <button
-                                className={`bookmark-icon ${bookmarkedIds.includes(sch.scholarship_id) ? "active" : ""}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBookmark(sch.scholarship_id);
-                                }}
-                              >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(sch.scholarship_id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                                  <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="scholar-info-section">
-                            <h4 className="section-label">Scholar Info</h4>
-                            <p className="scholar-description">
-                              {sch.description.length > 150
-                                ? sch.description.substring(0, 150) + "..."
-                                : sch.description}
-                            </p>
-                          </div>
-
-                          <div className="card-footer">
-                            <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>
-                              View More
+                    {sortedScholarships.slice(3).map((sch) => (
+                      <div key={sch.scholarship_id} className="scholarship-card">
+                        <div className="card-header">
+                          <h3 className="scholarship-name">{sch.name}</h3>
+                          <div className="card-actions">
+                            <button className="icon-btn" onClick={(e) => e.stopPropagation()}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="1"/>
+                                <circle cx="19" cy="12" r="1"/>
+                                <circle cx="5" cy="12" r="1"/>
+                              </svg>
                             </button>
-                            <button className="match-btn">Match</button>
-                          </div>
 
-                          {sch.deadline && (
-                            <div className="deadline-badge">
-                              {new Date(sch.deadline).toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                              })}
-                            </div>
-                          )}
+                            <button
+                              className={`bookmark-icon ${bookmarkedIds.includes(Number(sch.scholarship_id)) ? "active" : ""}`}
+                              onClick={(e) => { e.stopPropagation(); handleBookmark(sch.scholarship_id); }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(Number(sch.scholarship_id)) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                      );
-                    })}
+
+                        <div className="scholar-info-section">
+                          <h4 className="section-label">Scholar Info</h4>
+                          <p className="scholar-description">
+                            {sch.description.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
+                          </p>
+                        </div>
+
+                        <div className="card-footer">
+                          <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>View More</button>
+                          <button className="match-btn">Match</button>
+                        </div>
+
+                        {sch.deadline && (
+                          <div className="deadline-badge">
+                            {new Date(sch.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </>
               )}
@@ -370,18 +318,13 @@ export default function ScholarshipsPage() {
           )}
         </div>
 
-        {/* Enhanced Modal */}
+        {/* Modal */}
         {selectedScholarship && (
           <div className="modal-overlay" onClick={() => setSelectedScholarship(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedScholarship.name}</h2>
-                <button
-                  className="close-btn"
-                  onClick={() => setSelectedScholarship(null)}
-                >
-                  ×
-                </button>
+                <button className="close-btn" onClick={() => setSelectedScholarship(null)}>×</button>
               </div>
 
               <div className="modal-body">
@@ -397,9 +340,7 @@ export default function ScholarshipsPage() {
                   <div className="detail-item">
                     <label>Deadline</label>
                     <p className={`deadline ${getDaysUntilDeadline(selectedScholarship.deadline) <= 7 ? 'urgent' : ''}`}>
-                      {selectedScholarship.deadline
-                        ? new Date(selectedScholarship.deadline).toLocaleDateString()
-                        : "Rolling"}
+                      {selectedScholarship.deadline ? new Date(selectedScholarship.deadline).toLocaleDateString() : "Rolling"}
                     </p>
                   </div>
                 </div>
@@ -416,12 +357,7 @@ export default function ScholarshipsPage() {
 
                 {selectedScholarship.website_link && (
                   <div className="action-section">
-                    <a
-                      href={selectedScholarship.website_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="apply-btn primary-btn"
-                    >
+                    <a href={selectedScholarship.website_link} target="_blank" rel="noopener noreferrer" className="apply-btn primary-btn">
                       Visit Scholarship Website
                     </a>
                   </div>
@@ -430,6 +366,7 @@ export default function ScholarshipsPage() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

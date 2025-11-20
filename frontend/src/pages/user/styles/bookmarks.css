@@ -1,18 +1,280 @@
-.bookmark-btn {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.2s ease;
+/* frontend/src/styles/bookmarks.css */
+.bookmarks-page {
+  padding: 2rem 0;
+  min-height: 100vh;
+  background: var(--background-color);
 }
 
-.bookmark-btn.active {
-  color: gold;
+.content-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
 
-.card-header {
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin: 2.5rem 0 1.5rem 0;
+}
+
+.section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color);
+  margin: 0;
+}
+
+/* Enhanced Scholarships Grid */
+.scholarship-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.scholarship-card {
+  background: var(--background-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scholarship-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.scholarship-card.matched {
+  background: linear-gradient(135deg, #667eea15, #a9bdf915);
+  border-color: var(--secondary-bg);
+}
+
+/* Enhanced Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.scholarship-name {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color);
+  line-height: 1.4;
+  flex: 1;
+  margin: 0;
+}
+
+.bookmark-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+}
+
+.bookmark-icon:hover {
+  color: var(--secondary-accent);
+  background: var(--primary-bg);
+  transform: scale(1.1);
+}
+
+.bookmark-icon.active {
+  color: var(--secondary-accent);
+}
+
+/* Scholarship Info Section */
+.scholar-info-section {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.scholar-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Enhanced Card Footer */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.deadline-badge {
+  background: var(--secondary-bg);
+  color: var(--tert-accent);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deadline-badge::before {
+  content: "⏰";
+  font-size: var(--font-size-sm);
+}
+
+/* Enhanced Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--background-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  margin: 2rem 0;
+}
+
+.empty-state h3 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: var(--font-size-md);
+}
+
+.explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary-gradient);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.explore-btn:hover {
+  opacity: 0.9;
+  color: white;
+}
+
+/* Enhanced Loading State */
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--background-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  margin: 2rem 0;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-accent);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bookmarks-page {
+    padding: 1rem 0;
+  }
+  
+  .content-section {
+    padding: 0 1rem;
+  }
+  
+  .section-header {
+    margin: 2rem 0 1rem 0;
+  }
+  
+  .scholarship-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .scholarship-card {
+    padding: 1.25rem;
+    min-height: 240px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .bookmark-icon {
+    align-self: flex-end;
+    margin-top: -0.5rem;
+  }
+  
+  .empty-state {
+    padding: 3rem 1.5rem;
+    margin: 1rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-title {
+    font-size: var(--font-size-lg);
+  }
+  
+  .scholarship-card {
+    min-height: 220px;
+  }
+  
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .deadline-badge {
+    align-self: stretch;
+    justify-content: center;
+  }
 }
