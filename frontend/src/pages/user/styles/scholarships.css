@@ -239,6 +239,93 @@
   flex-shrink: 0;
 }
 
+/* Enhanced Bookmark Styles */
+.bookmark-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.bookmark-icon:hover {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+.bookmark-icon.active {
+  color: #764ba2;
+  background: rgba(118, 75, 162, 0.1);
+}
+
+.bookmark-icon.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bookmark-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.bookmark-icon svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.3s ease;
+}
+
+/* Make sure card actions are properly aligned */
+.card-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* Modal header actions */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 2rem 2rem 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Ensure visibility */
+.bookmark-icon {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Debug border - remove after confirming it works */
+.bookmark-icon {
+  /* border: 1px solid red; */ /* Uncomment to see clickable area */
+}
+
+.icon-btn, .bookmark-icon {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 .icon-btn, .bookmark-icon {
   background: transparent;
   border: none;

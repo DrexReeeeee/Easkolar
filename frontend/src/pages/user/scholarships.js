@@ -11,6 +11,7 @@ export default function ScholarshipsPage() {
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [bookmarkLoading, setBookmarkLoading] = useState(null);
 
   const token = localStorage.getItem("token");
   const axiosConfig = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
@@ -33,12 +34,23 @@ export default function ScholarshipsPage() {
   useEffect(() => {
     const fetchBookmarks = async () => {
       try {
-        if (!token) return;
+        if (!token) {
+          console.log("No token available for bookmarks");
+          return;
+        }
+        console.log("Fetching bookmarks with token...");
         const res = await axios.get("http://localhost:5001/api/bookmarks/user/me", axiosConfig);
-        const bookmarked = res.data.bookmarks.map((b) => Number(b.scholarshipId || b.scholarship_id));
+        console.log("Bookmarks API response:", res.data);
+        
+        const bookmarked = res.data.bookmarks.map((b) => 
+          Number(b.scholarshipId || b.scholarship_id || b.scholarship?.scholarship_id)
+        );
+        
+        console.log("Parsed bookmark IDs:", bookmarked);
         setBookmarkedIds(bookmarked);
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
+        console.error("Error details:", err.response?.data);
       }
     };
     fetchBookmarks();
@@ -61,25 +73,40 @@ export default function ScholarshipsPage() {
     };
   }, [selectedScholarship]);
 
-  const handleBookmark = async (scholarshipId) => {
+  const handleBookmark = async (scholarshipId, scholarshipName) => {
+    console.log("Bookmark clicked for:", scholarshipId, scholarshipName);
+    
     if (!token) {
       alert("Please log in to bookmark scholarships.");
       return;
     }
 
     const id = Number(scholarshipId);
+    setBookmarkLoading(id);
+    
     try {
       const isBookmarked = bookmarkedIds.includes(id);
+      console.log("Is currently bookmarked?", isBookmarked);
 
       if (isBookmarked) {
+        // Remove bookmark
+        console.log("Removing bookmark...");
         await axios.delete(`http://localhost:5001/api/bookmarks/${id}`, axiosConfig);
         setBookmarkedIds((prev) => prev.filter((x) => x !== id));
+        console.log("Bookmark removed successfully");
       } else {
+        // Add bookmark
+        console.log("Adding bookmark...");
         await axios.post("http://localhost:5001/api/bookmarks", { scholarship_id: id }, axiosConfig);
         setBookmarkedIds((prev) => [...prev, id]);
+        console.log("Bookmark added successfully");
       }
     } catch (err) {
       console.error("Error updating bookmark:", err);
+      console.error("Full error:", err.response?.data);
+      alert("Failed to update bookmark. Please try again.");
+    } finally {
+      setBookmarkLoading(null);
     }
   };
 
@@ -115,6 +142,40 @@ export default function ScholarshipsPage() {
     const diffTime = deadlineDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Bookmark icon component for reusability
+  const BookmarkButton = ({ scholarship, size = 18 }) => {
+    const scholarshipId = Number(scholarship.scholarship_id);
+    const isBookmarked = bookmarkedIds.includes(scholarshipId);
+    const isLoading = bookmarkLoading === scholarshipId;
+
+    return (
+      <button
+        className={`bookmark-icon ${isBookmarked ? "active" : ""} ${isLoading ? "loading" : ""}`}
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          handleBookmark(scholarship.scholarship_id, scholarship.name);
+        }}
+        disabled={isLoading}
+        title={isBookmarked ? "Remove bookmark" : "Add to bookmarks"}
+      >
+        {isLoading ? (
+          <div className="bookmark-spinner"></div>
+        ) : (
+          <svg 
+            width={size} 
+            height={size} 
+            viewBox="0 0 24 24" 
+            fill={isBookmarked ? "currentColor" : "none"} 
+            stroke="currentColor" 
+            strokeWidth="2"
+          >
+            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        )}
+      </button>
+    );
   };
 
   return (
@@ -205,7 +266,10 @@ export default function ScholarshipsPage() {
           ) : (
             <>
               <div className="section-header">
-                <h2 className="section-title">Matched Scholarships</h2>
+                <h2 className="section-title">
+                  Matched Scholarships 
+                  {filter === "bookmarked" && ` (${filteredScholarships.length} bookmarked)`}
+                </h2>
                 <button className="see-all-btn">See All</button>
               </div>
 
@@ -225,22 +289,14 @@ export default function ScholarshipsPage() {
                             </svg>
                           </button>
 
-                          {/* Bookmark Button */}
-                          <button
-                            className={`bookmark-icon ${bookmarkedIds.includes(Number(sch.scholarship_id)) ? "active" : ""}`}
-                            onClick={(e) => { e.stopPropagation(); handleBookmark(sch.scholarship_id); }}
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(Number(sch.scholarship_id)) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                              <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                            </svg>
-                          </button>
+                          <BookmarkButton scholarship={sch} size={18} />
                         </div>
                       </div>
 
                       <div className="scholar-info-section">
                         <h4 className="section-label">Scholar Info</h4>
                         <p className="scholar-description">
-                          {sch.description.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
+                          {sch.description?.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
                         </p>
                       </div>
 
@@ -281,21 +337,14 @@ export default function ScholarshipsPage() {
                               </svg>
                             </button>
 
-                            <button
-                              className={`bookmark-icon ${bookmarkedIds.includes(Number(sch.scholarship_id)) ? "active" : ""}`}
-                              onClick={(e) => { e.stopPropagation(); handleBookmark(sch.scholarship_id); }}
-                            >
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedIds.includes(Number(sch.scholarship_id)) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                              </svg>
-                            </button>
+                            <BookmarkButton scholarship={sch} size={18} />
                           </div>
                         </div>
 
                         <div className="scholar-info-section">
                           <h4 className="section-label">Scholar Info</h4>
                           <p className="scholar-description">
-                            {sch.description.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
+                            {sch.description?.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
                           </p>
                         </div>
 
@@ -324,7 +373,10 @@ export default function ScholarshipsPage() {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedScholarship.name}</h2>
-                <button className="close-btn" onClick={() => setSelectedScholarship(null)}>×</button>
+                <div className="modal-actions">
+                  <BookmarkButton scholarship={selectedScholarship} size={20} />
+                  <button className="close-btn" onClick={() => setSelectedScholarship(null)}>×</button>
+                </div>
               </div>
 
               <div className="modal-body">
