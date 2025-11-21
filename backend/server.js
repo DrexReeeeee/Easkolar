@@ -16,6 +16,10 @@ const authRoutes = require('./routes/authRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const chatBotRouter = require('./routes/chatBotRoutes');
+const adminScholarshipRoutes = require('./routes/adminScholarships');
+
+app.use('/api/admin/scholarships', adminScholarshipRoutes);
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/scholarships', scholarshipRoutes);

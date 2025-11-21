@@ -6,6 +6,7 @@ import "./styles/profile.css";
 function Profile() {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({});
+  const [originalData, setOriginalData] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ function Profile() {
 
         setUser(response.data.user);
         setFormData(response.data.user);
+        setOriginalData(response.data.user); // Store original data for cancel
       } catch (err) {
         console.error(err);
         setError("Failed to load profile. Please log in again.");
@@ -38,7 +40,18 @@ function Profile() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ 
+      ...formData, 
+      [name]: value 
+    });
+  };
+
+  const handleCancel = () => {
+    setFormData(originalData); // Reset to original data
+    setIsEditing(false);
+    setError("");
+    setSuccess("");
   };
 
   const handleSubmit = async (e) => {
@@ -57,6 +70,7 @@ function Profile() {
 
       setUser(response.data.user);
       setFormData(response.data.user);
+      setOriginalData(response.data.user); // Update original data
       setSuccess("Profile updated successfully!");
       setIsEditing(false);
       
@@ -74,7 +88,12 @@ function Profile() {
     const fields = [
       formData.first_name, formData.last_name, formData.email, 
       formData.birth_date, formData.gender, formData.contact_number,
-      formData.location, formData.school, formData.course, formData.gpa
+      formData.location, formData.school, formData.course, 
+      formData.strand_or_course, formData.year_level, formData.gpa,
+      formData.address_region, formData.address_province, formData.address_city,
+      formData.parents_occupation, formData.parents_education,
+      formData.household_income_range, formData.siblings_in_school, 
+      formData.field_of_interest, formData.preferred_fields
     ];
     const filled = fields.filter(field => field && field !== "").length;
     return Math.round((filled / fields.length) * 100);
@@ -108,6 +127,18 @@ function Profile() {
   }
 
   const completionPercentage = calculateCompletion();
+  const preferredFieldsOptions = [
+    "STEM (Science, Technology, Engineering, Mathematics)",
+    "Business & Entrepreneurship",
+    "Arts & Humanities",
+    "Healthcare & Medicine",
+    "Education & Teaching",
+    "Information Technology",
+    "Agriculture & Forestry",
+    "Social Sciences",
+    "Law & Legal Studies",
+    "Hospitality & Tourism"
+  ];
 
   return (
     <div className="profile-page">
@@ -154,7 +185,7 @@ function Profile() {
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                Student
+                {user.role === 'admin' ? 'Administrator' : 'Student'}
               </span>
               {formData.school && (
                 <span className="meta-item">
@@ -163,6 +194,14 @@ function Profile() {
                     <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                   </svg>
                   {formData.school}
+                </span>
+              )}
+              {formData.field_of_interest && (
+                <span className="meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  {formData.field_of_interest}
                 </span>
               )}
             </div>
@@ -178,7 +217,7 @@ function Profile() {
                 Edit Profile
               </button>
             ) : (
-              <button className="cancel-btn" onClick={() => setIsEditing(false)}>
+              <button className="cancel-btn" onClick={handleCancel}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
@@ -258,6 +297,17 @@ function Profile() {
                       />
                     </div>
                     <div className="form-group full-width">
+                      <label>Full Name</label>
+                      <input
+                        type="text"
+                        name="full_name"
+                        value={formData.full_name || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Complete full name as it appears on official documents"
+                      />
+                    </div>
+                    <div className="form-group full-width">
                       <label>Email Address</label>
                       <input
                         type="email"
@@ -290,6 +340,7 @@ function Profile() {
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
                       </select>
                     </div>
                     <div className="form-group full-width">
@@ -327,14 +378,14 @@ function Profile() {
                 <div className="form-section">
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>Street Address</label>
+                      <label>Street Address / Location</label>
                       <input
                         type="text"
                         name="location"
                         value={formData.location || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
-                        placeholder="House/Unit No., Street Name"
+                        placeholder="House/Unit No., Street Name, Barangay"
                       />
                     </div>
                     <div className="form-group">
@@ -345,6 +396,7 @@ function Profile() {
                         value={formData.address_region || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
+                        placeholder="e.g., Region IV-A"
                       />
                     </div>
                     <div className="form-group">
@@ -355,6 +407,7 @@ function Profile() {
                         value={formData.address_province || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
+                        placeholder="e.g., Cavite"
                       />
                     </div>
                     <div className="form-group full-width">
@@ -365,25 +418,28 @@ function Profile() {
                         value={formData.address_city || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
+                        placeholder="e.g., Dasmariñas City"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Academic Information Card */}
+              {/* Family Background Card */}
               <div className="content-card">
                 <div className="card-header">
                   <div className="card-header-content">
                     <div className="card-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                       </svg>
                     </div>
                     <div>
-                      <h2 className="card-title">Academic Information</h2>
-                      <p className="card-subtitle">Education and achievements</p>
+                      <h2 className="card-title">Family Background</h2>
+                      <p className="card-subtitle">Family and financial information</p>
                     </div>
                   </div>
                 </div>
@@ -391,48 +447,55 @@ function Profile() {
                 <div className="form-section">
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>School/University</label>
+                      <label>Parents' Occupation</label>
                       <input
                         type="text"
-                        name="school"
-                        value={formData.school || ""}
+                        name="parents_occupation"
+                        value={formData.parents_occupation || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Course/Program</label>
-                      <input
-                        type="text"
-                        name="course"
-                        value={formData.course || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Year Level</label>
-                      <input
-                        type="text"
-                        name="year_level"
-                        value={formData.year_level || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="e.g., 2nd Year"
+                        placeholder="What do your parents do for work?"
                       />
                     </div>
                     <div className="form-group full-width">
-                      <label>GPA / General Average</label>
+                      <label>Parents' Education</label>
+                      <input
+                        type="text"
+                        name="parents_education"
+                        value={formData.parents_education || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Highest educational attainment of parents"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Household Income Range</label>
+                      <select 
+                        name="household_income_range" 
+                        value={formData.household_income_range || ""} 
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Range</option>
+                        <option value="Below 10,000">Below ₱10,000</option>
+                        <option value="10,000 - 20,000">₱10,000 - ₱20,000</option>
+                        <option value="20,000 - 30,000">₱20,000 - ₱30,000</option>
+                        <option value="30,000 - 50,000">₱30,000 - ₱50,000</option>
+                        <option value="50,000 - 100,000">₱50,000 - ₱100,000</option>
+                        <option value="Above 100,000">Above ₱100,000</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Siblings in School</label>
                       <input
                         type="number"
-                        name="gpa"
-                        value={formData.gpa || ""}
+                        name="siblings_in_school"
+                        value={formData.siblings_in_school || ""}
                         onChange={handleChange}
                         disabled={!isEditing}
                         min="0"
-                        max="4"
-                        step="0.01"
-                        placeholder="0.00 - 4.00"
+                        max="20"
+                        placeholder="0"
                       />
                     </div>
                   </div>
@@ -504,6 +567,188 @@ function Profile() {
                 </div>
               </div>
 
+              {/* Academic Information Card */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Academic Information</h2>
+                      <p className="card-subtitle">Education and achievements</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>School/University</label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={formData.school || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Name of your educational institution"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Course/Program</label>
+                      <input
+                        type="text"
+                        name="course"
+                        value={formData.course || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="e.g., BS Computer Science"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Strand/Course (SHS)</label>
+                      <input
+                        type="text"
+                        name="strand_or_course"
+                        value={formData.strand_or_course || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="For Senior High School students"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Year Level</label>
+                      <select 
+                        name="year_level" 
+                        value={formData.year_level || ""} 
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Year Level</option>
+                        <option value="Grade 7">Grade 7</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                        <option value="1st Year">1st Year College</option>
+                        <option value="2nd Year">2nd Year College</option>
+                        <option value="3rd Year">3rd Year College</option>
+                        <option value="4th Year">4th Year College</option>
+                        <option value="5th Year">5th Year College</option>
+                      </select>
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Field of Interest</label>
+                      <input
+                        type="text"
+                        name="field_of_interest"
+                        value={formData.field_of_interest || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="e.g., Computer Science, Medicine, Engineering"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>GPA / General Average</label>
+                      <input
+                        type="number"
+                        name="gpa"
+                        value={formData.gpa || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="0-100 scale"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferred Fields Card - Improved Design */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Preferred Fields of Study</h2>
+                      <p className="card-subtitle">Select your areas of interest (multiple choices)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-group full-width">
+                    <label>Fields of Interest</label>
+                    <div className="tags-input-container">
+                      {isEditing ? (
+                        <div className="select-dropdown">
+                          <select
+                            name="preferred_fields"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value && !formData.preferred_fields?.includes(e.target.value)) {
+                                const newValue = formData.preferred_fields 
+                                  ? `${formData.preferred_fields},${e.target.value}`
+                                  : e.target.value;
+                                setFormData({ ...formData, preferred_fields: newValue });
+                              }
+                              e.target.value = ""; // Reset select
+                            }}
+                            disabled={!isEditing}
+                            className="dropdown-select"
+                          >
+                            <option value="">Add a field of interest...</option>
+                            {preferredFieldsOptions.map((field, index) => (
+                              <option key={index} value={field}>
+                                {field}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+                      
+                      <div className="selected-tags">
+                        {formData.preferred_fields?.split(',').filter(Boolean).map((field, index) => (
+                          <span key={index} className="tag">
+                            {field}
+                            {isEditing && (
+                              <button
+                                type="button"
+                                className="tag-remove"
+                                onClick={() => {
+                                  const currentFields = formData.preferred_fields?.split(',').filter(Boolean) || [];
+                                  const newFields = currentFields.filter(f => f !== field);
+                                  setFormData({ 
+                                    ...formData, 
+                                    preferred_fields: newFields.join(',') 
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                        {(!formData.preferred_fields || formData.preferred_fields.split(',').filter(Boolean).length === 0) && !isEditing && (
+                          <span className="no-tags">No fields selected</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="field-hint">Select multiple fields that interest you for better scholarship matching</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Additional Information Card */}
               <div className="content-card">
                 <div className="card-header">
@@ -545,6 +790,17 @@ function Profile() {
                       />
                     </div>
                     <div className="form-group full-width">
+                      <label>Volunteer Work</label>
+                      <textarea
+                        name="volunteer_work"
+                        value={formData.volunteer_work || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Describe any volunteer work or community service..."
+                        rows="3"
+                      />
+                    </div>
+                    <div className="form-group full-width">
                       <label>Special Skills</label>
                       <textarea
                         name="special_skills"
@@ -553,6 +809,17 @@ function Profile() {
                         disabled={!isEditing}
                         placeholder="List any special skills or talents..."
                         rows="3"
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Special Sector Membership</label>
+                      <input
+                        type="text"
+                        name="special_sector_membership"
+                        value={formData.special_sector_membership || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="e.g., Indigenous People, PWD, Solo Parent, etc."
                       />
                     </div>
                   </div>
