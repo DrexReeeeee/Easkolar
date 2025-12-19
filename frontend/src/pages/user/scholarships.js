@@ -210,7 +210,7 @@ export default function ScholarshipsPage() {
   };
 
   const handleFindScholarship = () => {
-    navigate("/chatbot");
+    navigate("/user/chatbot");
   };
 
   return (
