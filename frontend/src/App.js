@@ -7,6 +7,8 @@ import Navbar from "./components/navbar";
 import Home from "./pages/home";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
+import About from "./pages/about";
+import Scholarships from "./pages/scholarships";
 
 // User Pages
 import UserLayout from "./pages/user/UserLayout";
@@ -26,15 +28,17 @@ function App() {
   return (
     <Router>
       <AppContent />
-
+      
       <Routes>
         {/* Landing Pages */}
         <Route path="/" element={<Home />} />
-
+        <Route path="/about" element={<About />} />
+        <Route path="/scholarships" element={<Scholarships />} />
+        
         {/* Authentication */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-
+        
         {/* User Layout (with sidebar/header) */}
         <Route path="/user" element={<UserLayout />}>
           <Route path="dashboard" element={<UserDashboard />} />
@@ -43,7 +47,7 @@ function App() {
           <Route path="chatbot" element={<ChatbotPage />} />
           <Route path="profile" element={<UserProfile />} />
         </Route>
-
+        
         {/* Admin Section */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>

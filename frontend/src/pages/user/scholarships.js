@@ -1,6 +1,6 @@
-/* /frontend/src/pages/user/scholarships.js */
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./styles/scholarships.css";
 
 export default function ScholarshipsPage() {
@@ -12,15 +12,24 @@ export default function ScholarshipsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [bookmarkLoading, setBookmarkLoading] = useState(null);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("deadline");
+  
+  const itemsPerPage = 12;
+  
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
-  const axiosConfig = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+  const axiosConfig = useMemo(() => {
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  }, [token]);
 
   useEffect(() => {
     const fetchScholarships = async () => {
       try {
         const res = await axios.get("http://localhost:5001/api/scholarships", axiosConfig);
         setScholarships(res.data.scholarships || []);
+        setError(null);
       } catch (err) {
         console.error("Error fetching scholarships:", err);
         setError("Failed to load scholarships. Please try again later.");
@@ -29,7 +38,7 @@ export default function ScholarshipsPage() {
       }
     };
     fetchScholarships();
-  }, []);
+  }, [axiosConfig]);
 
   useEffect(() => {
     const fetchBookmarks = async () => {
@@ -38,15 +47,13 @@ export default function ScholarshipsPage() {
           console.log("No token available for bookmarks");
           return;
         }
-        console.log("Fetching bookmarks with token...");
-        const res = await axios.get("http://localhost:5001/api/bookmarks/user/me", axiosConfig);
-        console.log("Bookmarks API response:", res.data);
-        
-        const bookmarked = res.data.bookmarks.map((b) => 
-          Number(b.scholarshipId || b.scholarship_id || b.scholarship?.scholarship_id)
+
+        const res = await axios.get("http://localhost:5001/api/bookmarks", axiosConfig);
+
+        const bookmarked = (res.data.bookmarks || []).map((b) =>
+          Number(b.Scholarship?.scholarship_id || b.scholarship_id)
         );
-        
-        console.log("Parsed bookmark IDs:", bookmarked);
+
         setBookmarkedIds(bookmarked);
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
@@ -54,7 +61,7 @@ export default function ScholarshipsPage() {
       }
     };
     fetchBookmarks();
-  }, [token]);
+  }, [axiosConfig, token]);
 
   useEffect(() => {
     const pageWrapper = document.querySelector(".page-wrapper");
@@ -74,8 +81,6 @@ export default function ScholarshipsPage() {
   }, [selectedScholarship]);
 
   const handleBookmark = async (scholarshipId, scholarshipName) => {
-    console.log("Bookmark clicked for:", scholarshipId, scholarshipName);
-    
     if (!token) {
       alert("Please log in to bookmark scholarships.");
       return;
@@ -83,23 +88,16 @@ export default function ScholarshipsPage() {
 
     const id = Number(scholarshipId);
     setBookmarkLoading(id);
-    
+
     try {
       const isBookmarked = bookmarkedIds.includes(id);
-      console.log("Is currently bookmarked?", isBookmarked);
 
       if (isBookmarked) {
-        // Remove bookmark
-        console.log("Removing bookmark...");
         await axios.delete(`http://localhost:5001/api/bookmarks/${id}`, axiosConfig);
         setBookmarkedIds((prev) => prev.filter((x) => x !== id));
-        console.log("Bookmark removed successfully");
       } else {
-        // Add bookmark
-        console.log("Adding bookmark...");
         await axios.post("http://localhost:5001/api/bookmarks", { scholarship_id: id }, axiosConfig);
         setBookmarkedIds((prev) => [...prev, id]);
-        console.log("Bookmark added successfully");
       }
     } catch (err) {
       console.error("Error updating bookmark:", err);
@@ -111,9 +109,13 @@ export default function ScholarshipsPage() {
   };
 
   const filteredScholarships = scholarships.filter((sch) => {
-    const matchesSearch = sch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sch.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const name = (sch.name || "").toLowerCase();
+    const description = (sch.description || "").toLowerCase();
+    const provider = (sch.provider || "").toLowerCase();
+    const q = searchQuery.toLowerCase();
+
+    const matchesSearch = name.includes(q) || description.includes(q) || provider.includes(q);
+
     const today = new Date();
     const hasDeadline = sch.deadline && new Date(sch.deadline) > today;
 
@@ -130,9 +132,25 @@ export default function ScholarshipsPage() {
   });
 
   const sortedScholarships = [...filteredScholarships].sort((a, b) => {
-    if (!a.deadline) return 1;
-    if (!b.deadline) return -1;
-    return new Date(a.deadline) - new Date(b.deadline);
+    switch (sortBy) {
+      case "name":
+        return (a.name || "").localeCompare(b.name || "");
+      
+      case "amount":
+        const amountA = parseFloat((a.amount || "0").replace(/[^0-9.]/g, "")) || 0;
+        const amountB = parseFloat((b.amount || "0").replace(/[^0-9.]/g, "")) || 0;
+        return amountB - amountA;
+      
+      case "provider":
+        return (a.provider || "").localeCompare(b.provider || "");
+      
+      case "deadline":
+      default:
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline) - new Date(b.deadline);
+    }
   });
 
   const getDaysUntilDeadline = (deadline) => {
@@ -144,8 +162,27 @@ export default function ScholarshipsPage() {
     return diffDays;
   };
 
-  // Bookmark icon component for reusability
-  const BookmarkButton = ({ scholarship, size = 18 }) => {
+  const formatAmount = (amount) => {
+    if (!amount) return "Varies";
+    if (amount.includes("$") || amount.includes("USD") || amount.match(/\d/)) {
+      return amount;
+    }
+    return `$${amount}`;
+  };
+
+  const calculatePagination = () => {
+    const totalItems = sortedScholarships.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    const currentScholarships = sortedScholarships.slice(startIndex, endIndex);
+    
+    return { totalItems, totalPages, startIndex, endIndex, currentScholarships };
+  };
+
+  const { totalItems, totalPages, startIndex, endIndex, currentScholarships } = calculatePagination();
+
+  const BookmarkButton = ({ scholarship, size = 20 }) => {
     const scholarshipId = Number(scholarship.scholarship_id);
     const isBookmarked = bookmarkedIds.includes(scholarshipId);
     const isLoading = bookmarkLoading === scholarshipId;
@@ -153,97 +190,93 @@ export default function ScholarshipsPage() {
     return (
       <button
         className={`bookmark-icon ${isBookmarked ? "active" : ""} ${isLoading ? "loading" : ""}`}
-        onClick={(e) => { 
-          e.stopPropagation(); 
+        onClick={(e) => {
+          e.stopPropagation();
           handleBookmark(scholarship.scholarship_id, scholarship.name);
         }}
         disabled={isLoading}
         title={isBookmarked ? "Remove bookmark" : "Add to bookmarks"}
+        aria-label={isBookmarked ? "Remove bookmark" : "Add to bookmarks"}
       >
         {isLoading ? (
-          <div className="bookmark-spinner"></div>
+          <div className="bookmark-spinner" />
         ) : (
-          <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill={isBookmarked ? "currentColor" : "none"} 
-            stroke="currentColor" 
-            strokeWidth="2"
-          >
-            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          <svg width={size} height={size} viewBox="0 0 24 24" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
         )}
       </button>
     );
   };
 
+  const handleFindScholarship = () => {
+    navigate("/user/chatbot");
+  };
+
   return (
     <div className="page-wrapper">
       <div className="scholarships-page">
-
-        {/* Toolbar */}
         <div className="toolbar-section">
           <div className="toolbar-main">
-            <button className="primary-btn find-scholarship-btn">
+            <button className="primary-btn find-scholarship-btn" onClick={handleFindScholarship}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
               </svg>
               Find My Scholarship
             </button>
 
             <div className="filter-group">
-              <button className="filter-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                </svg>
-                Filter
-              </button>
-              <select
-                className="filter-dropdown"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
+              <select className="filter-dropdown" value={filter} onChange={(e) => setFilter(e.target.value)}>
                 <option value="all">All Scholarships</option>
                 <option value="active">Active Opportunities</option>
                 <option value="deadline">Upcoming Deadlines</option>
-                <option value="bookmarked">Bookmarked</option>
               </select>
+              <div className="sort-group">
+                <label htmlFor="sort-select" className="sort-label">Sort By:</label>
+                <select 
+                  id="sort-select"
+                  className="sort-dropdown" 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="deadline">Deadline (Soonest)</option>
+                  <option value="amount">Amount (Highest)</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="provider">Provider (A-Z)</option>
+                </select>
+              </div>
             </div>
 
             <div className="search-container">
               <div className="search-box">
                 <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
                 </svg>
-                <input
-                  type="text"
-                  placeholder="Search scholarships"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <input 
+                  type="text" 
+                  placeholder="Search scholarships..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)} 
                 />
               </div>
             </div>
-
-            <button className="deadlines-btn">Deadlines</button>
           </div>
         </div>
 
-        {/* Scholarships Content */}
         <div className="scholarships-content">
           {loading ? (
             <div className="loading-state">
-              <div className="loading-spinner"></div>
+              <div className="loading-spinner" />
               <p>Loading scholarships...</p>
             </div>
           ) : error ? (
             <div className="error-state">
               <svg className="error-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <h3>Unable to Load Scholarships</h3>
               <p>{error}</p>
@@ -254,8 +287,8 @@ export default function ScholarshipsPage() {
           ) : filteredScholarships.length === 0 ? (
             <div className="empty-state">
               <svg className="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
               </svg>
               <h3>No scholarships found</h3>
               <p>Try adjusting your search or filter criteria</p>
@@ -266,48 +299,88 @@ export default function ScholarshipsPage() {
           ) : (
             <>
               <div className="section-header">
-                <h2 className="section-title">
-                  Matched Scholarships 
-                  {filter === "bookmarked" && ` (${filteredScholarships.length} bookmarked)`}
-                </h2>
-                <button className="see-all-btn">See All</button>
+                <h3 className="section-title">All Scholarships</h3>
+                <div className="results-count">
+                  Showing {startIndex + 1}-{endIndex} of {totalItems} scholarships
+                </div>
               </div>
 
               <div className="scholarship-grid">
-                {sortedScholarships.slice(0, 3).map((sch) => {
+                {currentScholarships.map((sch) => {
                   const daysUntilDeadline = getDaysUntilDeadline(sch.deadline);
+                  const isBookmarked = bookmarkedIds.includes(Number(sch.scholarship_id));
+                  
                   return (
-                    <div key={sch.scholarship_id} className="scholarship-card matched">
+                    <div key={sch.scholarship_id} className="scholarship-card">
                       <div className="card-header">
-                        <h3 className="scholarship-name">{sch.name}</h3>
+                        <div className="scholarship-name-container">
+                          <h3 className="scholarship-name">{sch.name}</h3>
+                          {sch.provider && (
+                            <div className="scholarship-provider">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                              </svg>
+                              {sch.provider}
+                            </div>
+                          )}
+                        </div>
                         <div className="card-actions">
-                          <button className="icon-btn" onClick={(e) => e.stopPropagation()}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="1"/>
-                              <circle cx="19" cy="12" r="1"/>
-                              <circle cx="5" cy="12" r="1"/>
-                            </svg>
-                          </button>
-
                           <BookmarkButton scholarship={sch} size={18} />
                         </div>
                       </div>
 
-                      <div className="scholar-info-section">
-                        <h4 className="section-label">Scholar Info</h4>
-                        <p className="scholar-description">
-                          {sch.description?.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
-                        </p>
+                      <div className="card-content">
+                        <div className="scholarship-meta">
+                          {sch.amount && (
+                            <div className="meta-item">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="1" x2="12" y2="23" />
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                              </svg>
+                              <span className="meta-value">{formatAmount(sch.amount)}</span>
+                            </div>
+                          )}
+                          
+                          {sch.deadline && (
+                            <div className={`meta-item ${daysUntilDeadline <= 7 ? "urgent" : ""}`}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span className="meta-value">
+                                {new Date(sch.deadline).toLocaleDateString("en-US", { 
+                                  month: "short", 
+                                  day: "numeric" 
+                                })}
+                                {daysUntilDeadline > 0 && (
+                                  <span className="days-remaining"> ({daysUntilDeadline} days)</span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="scholarship-description">
+                          <p>{sch.description?.length > 120 ? sch.description.substring(0, 120) + "..." : sch.description}</p>
+                        </div>
                       </div>
 
                       <div className="card-footer">
-                        <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>View More</button>
-                        <button className="match-btn">Match</button>
+                        <button 
+                          className="view-more-btn" 
+                          onClick={() => setSelectedScholarship(sch)}
+                          aria-label={`View details for ${sch.name}`}
+                        >
+                          View Details
+                        </button>
                       </div>
 
-                      {sch.deadline && (
-                        <div className="deadline-badge">
-                          {new Date(sch.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      {isBookmarked && (
+                        <div className="bookmark-indicator" title="Bookmarked">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                          </svg>
                         </div>
                       )}
                     </div>
@@ -315,92 +388,148 @@ export default function ScholarshipsPage() {
                 })}
               </div>
 
-              {/* Recommendations Section */}
-              {sortedScholarships.length > 3 && (
-                <>
-                  <div className="section-header">
-                    <h2 className="section-title">Recommendations</h2>
-                    <button className="see-all-btn">See All</button>
+              {totalPages > 1 && (
+                <div className="pagination-section">
+                  <div className="pagination">
+                    <button 
+                      className="pagination-btn prev" 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                      Previous
+                    </button>
+                    
+                    <div className="page-numbers">
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            className={`page-btn ${currentPage === pageNum ? "active" : ""}`}
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      
+                      {totalPages > 5 && currentPage < totalPages - 2 && (
+                        <>
+                          <span className="page-dots">...</span>
+                          <button
+                            className="page-btn"
+                            onClick={() => setCurrentPage(totalPages)}
+                          >
+                            {totalPages}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    
+                    <button 
+                      className="pagination-btn next" 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
                   </div>
-
-                  <div className="scholarship-grid">
-                    {sortedScholarships.slice(3).map((sch) => (
-                      <div key={sch.scholarship_id} className="scholarship-card">
-                        <div className="card-header">
-                          <h3 className="scholarship-name">{sch.name}</h3>
-                          <div className="card-actions">
-                            <button className="icon-btn" onClick={(e) => e.stopPropagation()}>
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="1"/>
-                                <circle cx="19" cy="12" r="1"/>
-                                <circle cx="5" cy="12" r="1"/>
-                              </svg>
-                            </button>
-
-                            <BookmarkButton scholarship={sch} size={18} />
-                          </div>
-                        </div>
-
-                        <div className="scholar-info-section">
-                          <h4 className="section-label">Scholar Info</h4>
-                          <p className="scholar-description">
-                            {sch.description?.length > 150 ? sch.description.substring(0, 150) + "..." : sch.description}
-                          </p>
-                        </div>
-
-                        <div className="card-footer">
-                          <button className="view-more-btn" onClick={() => setSelectedScholarship(sch)}>View More</button>
-                          <button className="match-btn">Match</button>
-                        </div>
-
-                        {sch.deadline && (
-                          <div className="deadline-badge">
-                            {new Date(sch.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
+                </div>
               )}
             </>
           )}
         </div>
 
-        {/* Modal */}
         {selectedScholarship && (
           <div className="modal-overlay" onClick={() => setSelectedScholarship(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedScholarship.name}</h2>
                 <div className="modal-actions">
-                  <BookmarkButton scholarship={selectedScholarship} size={20} />
-                  <button className="close-btn" onClick={() => setSelectedScholarship(null)}>×</button>
+                  <BookmarkButton scholarship={selectedScholarship} size={22} />
+                  <button 
+                    className="close-btn" 
+                    onClick={() => setSelectedScholarship(null)}
+                    aria-label="Close modal"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
 
               <div className="modal-body">
-                <div className="scholarship-details-grid">
+                <div className="modal-details-grid">
                   <div className="detail-item">
-                    <label>Provider</label>
-                    <p>{selectedScholarship.provider || "Not specified"}</p>
+                    <div className="detail-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <label>Provider</label>
+                      <p>{selectedScholarship.provider || "Not specified"}</p>
+                    </div>
                   </div>
+                  
                   <div className="detail-item">
-                    <label>Amount</label>
-                    <p className="amount">{selectedScholarship.amount || "Varies"}</p>
+                    <div className="detail-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <label>Amount</label>
+                      <p className="amount">{formatAmount(selectedScholarship.amount)}</p>
+                    </div>
                   </div>
+                  
                   <div className="detail-item">
-                    <label>Deadline</label>
-                    <p className={`deadline ${getDaysUntilDeadline(selectedScholarship.deadline) <= 7 ? 'urgent' : ''}`}>
-                      {selectedScholarship.deadline ? new Date(selectedScholarship.deadline).toLocaleDateString() : "Rolling"}
-                    </p>
+                    <div className="detail-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <label>Deadline</label>
+                      <p className={`deadline ${getDaysUntilDeadline(selectedScholarship.deadline) <= 7 ? "urgent" : ""}`}>
+                        {selectedScholarship.deadline 
+                          ? new Date(selectedScholarship.deadline).toLocaleDateString("en-US", { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })
+                          : "Rolling"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="detail-section">
-                  <h4>Eligibility Criteria</h4>
-                  <p>{selectedScholarship.eligibility || "No specific eligibility criteria provided."}</p>
-                </div>
+                {selectedScholarship.eligibility && (
+                  <div className="detail-section">
+                    <h4>Eligibility Criteria</h4>
+                    <p>{selectedScholarship.eligibility}</p>
+                  </div>
+                )}
 
                 <div className="detail-section">
                   <h4>Description</h4>
@@ -409,7 +538,17 @@ export default function ScholarshipsPage() {
 
                 {selectedScholarship.website_link && (
                   <div className="action-section">
-                    <a href={selectedScholarship.website_link} target="_blank" rel="noopener noreferrer" className="apply-btn primary-btn">
+                    <a 
+                      href={selectedScholarship.website_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="apply-btn primary-btn"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
                       Visit Scholarship Website
                     </a>
                   </div>
@@ -418,7 +557,6 @@ export default function ScholarshipsPage() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

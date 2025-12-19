@@ -26,7 +26,7 @@ export default function Sidebar() {
     <div className="sidebar">
       {/* ===== LOGO SECTION ===== */}
       <div className="sidebar-logo">
-          <span className="brand-text">
+        <span className="brand-text">
           <span className="brand-ease">Ease</span>
           <span className="brand-kolar">Kolar</span>
         </span>

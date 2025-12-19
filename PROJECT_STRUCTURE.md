@@ -1,4 +1,4 @@
-# Easkolar Project Structure
+ # Easkolar Project Structure
 
 This document outlines the folder and file structure of the Easkolar project, a scholarship platform with backend and frontend components.
 
@@ -6,7 +6,6 @@ EaseKolar/
 ├── .gitignore                       # Git ignore rules
 ├── easekolar_db.sql                 # Database schema file
 ├── PROJECT_STRUCTURE.md             # Project structure documentation
-├── TODO.md                          # Task list
 ├── backend/                         # Backend (Node.js/Express)
 │   ├── package.json                 # Backend dependencies and scripts
 │   ├── package-lock.json            # Lockfile for dependencies
@@ -25,6 +24,7 @@ EaseKolar/
 │   │   ├── Scholarship.js           # Scholarship model
 │   │   └── User.js                  # User model
 │   ├── routes/                      # API routes
+│   │   ├── adminScholarships.js     # Admin scholarship routes
 │   │   ├── authRoutes.js            # Authentication routes
 │   │   ├── bookmarkRoutes.js        # Bookmark routes
 │   │   ├── chatBotRoutes.js         # Chatbot routes
@@ -56,14 +56,18 @@ EaseKolar/
         ├── reportWebVitals.js       # Performance monitoring
         ├── setupTests.js            # Test setup
         ├── styles/                  # Stylesheets
+        │   ├── about.css            # About page styles
         │   ├── home.css             # Home page styles
         │   ├── navbar.css           # Navbar styles
         │   ├── root.css             # Root styles
+        │   ├── scholarships.css     # Scholarships page styles
         │   ├── signin.css           # Sign-in page styles
         │   └── signup.css           # Sign-up page styles
         └── pages/                   # Page components
             ├── admin/               # Admin pages
-            │   └── dashboard.js     # Admin dashboard
+            │   ├── dashboard.js     # Admin dashboard
+            │   └── styles/
+            │       └── admin.css    # Admin dashboard styles
             ├── auth/                # Authentication pages
             │   ├── SignIn.js        # Sign-in page
             │   └── SignUp.js        # Sign-up page
