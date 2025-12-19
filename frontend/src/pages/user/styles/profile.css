@@ -12,8 +12,6 @@
 .profile-cover {
   position: relative;
   margin-bottom: 2rem;
-  background: var(--background-color);
-  border-bottom: 1px solid var(--border-color);
 }
 
 .cover-photo {

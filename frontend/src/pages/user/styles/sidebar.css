@@ -21,20 +21,19 @@
   padding-left: 0.5rem;
 }
 
-.brand-text {
+.sidebar-logo .brand-text {
   font-family: var(--secondary-font);
   font-size: 1.6rem;
   font-weight: var(--font-weight-normal) !important;
   letter-spacing: 0.5px;
 }
 
-.brand-ease {
+.sidebar-logo .brand-text .brand-ease {
   font-style: italic;
-  color: var(--primary-bg);
+  color: var(--primary-bg) !important;
 }
-
-.brand-kolar {
-  color: var(--primary-bg);
+.sidebar-logo .brand-text .brand-kolar {
+  color: var(--primary-bg) !important;
 }
 
 /* ===== SECTIONS ===== */

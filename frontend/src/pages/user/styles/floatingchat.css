@@ -1,0 +1,36 @@
+/* Floating Chat Button Styles */
+.floating-chat {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--secondary-accent);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(109, 25, 131, 0.3);
+  z-index: 9999;
+  transition: all 0.2s ease;
+}
+
+.floating-chat:hover {
+  background: var(--primary-accent);
+}
+
+/* Responsive for floating chat */
+@media (max-width: 768px) {
+  .floating-chat span {
+    display: none;
+  }
+
+  .floating-chat {
+    padding: 16px;
+    border-radius: 50%;
+  }
+}

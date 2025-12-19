@@ -1,3 +1,4 @@
+// src/components/navbar.js
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../styles/root.css";
@@ -17,7 +18,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        {/* Left: Logo & Brand - Keeping your exact structure */}
+        {/* Left: Logo & Brand */}
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           <img
             src="/assets/logo-trans.png"
@@ -30,7 +31,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Center: Navigation Links - Enhanced but familiar */}
+        {/* Center: Navigation Links */}
         <div className={`navbar-links-wrapper ${isMenuOpen ? "mobile-open" : ""}`}>
           <ul className="navbar-nav">
             <li className="nav-item">
@@ -43,15 +44,6 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link
-                className={`nav-link ${isActiveLink("/scholarships")}`}
-                to="/scholarships"
-                onClick={closeMenu}
-              >
-                Scholarships
-              </Link>
-            </li>
-            <li className="nav-item">
               <Link 
                 className={`nav-link ${isActiveLink("/about")}`} 
                 to="/about"
@@ -60,10 +52,19 @@ export default function Navbar() {
                 About
               </Link>
             </li>
+            <li className="nav-item">
+              <Link 
+                className={`nav-link ${isActiveLink("/scholarships")}`} 
+                to="/scholarships"
+                onClick={closeMenu}
+              >
+                Scholarships
+              </Link>
+            </li>
           </ul>
         </div>
 
-        {/* Right: Action Buttons - Enhanced interactions */}
+        {/* Right: Action Buttons */}
         <div className="navbar-actions">
           <Link to="/signin" className="btn-outline-primary">
             Sign In

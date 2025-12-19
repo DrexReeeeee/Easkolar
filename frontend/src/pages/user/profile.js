@@ -11,6 +11,7 @@ function Profile() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [stats, setStats] = useState({ applications: 0, bookmarks: 0, matches: 0 });
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -36,7 +37,29 @@ function Profile() {
       }
     };
 
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        // Fetch bookmarks count
+        const bookmarksResponse = await axios.get("http://localhost:5001/api/bookmarks", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setStats({
+          bookmarks: bookmarksResponse.data.bookmarks.length || 0,
+        });
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+        // Keep default values on error
+      }
+    };
+
     fetchUserProfile();
+    fetchStats();
   }, []);
 
   const handleChange = (e) => {
@@ -86,17 +109,42 @@ function Profile() {
 
   const calculateCompletion = () => {
     const fields = [
-      formData.first_name, formData.last_name, formData.email, 
+      formData.first_name, formData.last_name, formData.email,
       formData.birth_date, formData.gender, formData.contact_number,
-      formData.location, formData.school, formData.course, 
+      formData.location, formData.school, formData.course,
       formData.strand_or_course, formData.year_level, formData.gpa,
       formData.address_region, formData.address_province, formData.address_city,
       formData.parents_occupation, formData.parents_education,
-      formData.household_income_range, formData.siblings_in_school, 
+      formData.household_income_range, formData.siblings_in_school,
       formData.field_of_interest, formData.preferred_fields
     ];
     const filled = fields.filter(field => field && field !== "").length;
     return Math.round((filled / fields.length) * 100);
+  };
+
+  const calculateProfileStrengthScore = () => {
+    // Profile strength based on completion percentage with quality weighting
+    const completion = calculateCompletion();
+    // Add bonus for having academic awards, leadership, etc.
+    let bonus = 0;
+    if (formData.academic_awards) bonus += 5;
+    if (formData.leadership_experience) bonus += 5;
+    if (formData.volunteer_work) bonus += 5;
+    if (formData.special_skills) bonus += 5;
+    return Math.min(100, completion + bonus);
+  };
+
+  const calculateEligibilityReadiness = () => {
+    // Eligibility readiness based on key scholarship eligibility fields
+    const keyFields = [
+      formData.first_name, formData.last_name, formData.email,
+      formData.birth_date, formData.contact_number,
+      formData.school, formData.year_level, formData.gpa,
+      formData.address_region, formData.address_province, formData.address_city,
+      formData.household_income_range, formData.field_of_interest
+    ];
+    const filled = keyFields.filter(field => field && field !== "").length;
+    return Math.round((filled / keyFields.length) * 100);
   };
 
   if (error && !user) {
@@ -127,6 +175,8 @@ function Profile() {
   }
 
   const completionPercentage = calculateCompletion();
+  const profileStrengthScore = calculateProfileStrengthScore();
+  const eligibilityReadiness = calculateEligibilityReadiness();
   const preferredFieldsOptions = [
     "STEM (Science, Technology, Engineering, Mathematics)",
     "Business & Entrepreneurship",
@@ -154,12 +204,6 @@ function Profile() {
               <div className="avatar-placeholder">
                 {user.first_name?.[0]}{user.last_name?.[0]}
               </div>
-              <button className="avatar-edit-btn" title="Change photo">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </button>
             </div>
           </div>
           
@@ -425,330 +469,6 @@ function Profile() {
                 </div>
               </div>
 
-              {/* Family Background Card */}
-              <div className="content-card">
-                <div className="card-header">
-                  <div className="card-header-content">
-                    <div className="card-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="card-title">Family Background</h2>
-                      <p className="card-subtitle">Family and financial information</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Parents' Occupation</label>
-                      <input
-                        type="text"
-                        name="parents_occupation"
-                        value={formData.parents_occupation || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="What do your parents do for work?"
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Parents' Education</label>
-                      <input
-                        type="text"
-                        name="parents_education"
-                        value={formData.parents_education || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="Highest educational attainment of parents"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Household Income Range</label>
-                      <select 
-                        name="household_income_range" 
-                        value={formData.household_income_range || ""} 
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                      >
-                        <option value="">Select Range</option>
-                        <option value="Below 10,000">Below ₱10,000</option>
-                        <option value="10,000 - 20,000">₱10,000 - ₱20,000</option>
-                        <option value="20,000 - 30,000">₱20,000 - ₱30,000</option>
-                        <option value="30,000 - 50,000">₱30,000 - ₱50,000</option>
-                        <option value="50,000 - 100,000">₱50,000 - ₱100,000</option>
-                        <option value="Above 100,000">Above ₱100,000</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Siblings in School</label>
-                      <input
-                        type="number"
-                        name="siblings_in_school"
-                        value={formData.siblings_in_school || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        min="0"
-                        max="20"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="content-column">
-              {/* Profile Insights Card */}
-              <div className="insights-card">
-                <h3 className="insights-title">Profile Insights</h3>
-                
-                <div className="insight-item completion-insight">
-                  <div className="insight-header">
-                    <span className="insight-label">Profile Completion</span>
-                    <span className="insight-value">{completionPercentage}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ width: `${completionPercentage}%` }}
-                    ></div>
-                  </div>
-                  <p className="insight-tip">
-                    {completionPercentage === 100 
-                      ? "🎉 Your profile is complete!" 
-                      : "Complete your profile to increase scholarship matches"}
-                  </p>
-                </div>
-
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <div className="stat-icon scholarships">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                      </svg>
-                    </div>
-                    <div className="stat-content">
-                      <div className="stat-value">8</div>
-                      <div className="stat-label">Applications</div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <div className="stat-icon bookmarks">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                      </svg>
-                    </div>
-                    <div className="stat-content">
-                      <div className="stat-value">12</div>
-                      <div className="stat-label">Bookmarks</div>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <div className="stat-icon matches">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </div>
-                    <div className="stat-content">
-                      <div className="stat-value">24</div>
-                      <div className="stat-label">Matches</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Academic Information Card */}
-              <div className="content-card">
-                <div className="card-header">
-                  <div className="card-header-content">
-                    <div className="card-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="card-title">Academic Information</h2>
-                      <p className="card-subtitle">Education and achievements</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>School/University</label>
-                      <input
-                        type="text"
-                        name="school"
-                        value={formData.school || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="Name of your educational institution"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Course/Program</label>
-                      <input
-                        type="text"
-                        name="course"
-                        value={formData.course || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="e.g., BS Computer Science"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Strand/Course (SHS)</label>
-                      <input
-                        type="text"
-                        name="strand_or_course"
-                        value={formData.strand_or_course || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="For Senior High School students"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Year Level</label>
-                      <select 
-                        name="year_level" 
-                        value={formData.year_level || ""} 
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                      >
-                        <option value="">Select Year Level</option>
-                        <option value="Grade 7">Grade 7</option>
-                        <option value="Grade 8">Grade 8</option>
-                        <option value="Grade 9">Grade 9</option>
-                        <option value="Grade 10">Grade 10</option>
-                        <option value="Grade 11">Grade 11</option>
-                        <option value="Grade 12">Grade 12</option>
-                        <option value="1st Year">1st Year College</option>
-                        <option value="2nd Year">2nd Year College</option>
-                        <option value="3rd Year">3rd Year College</option>
-                        <option value="4th Year">4th Year College</option>
-                        <option value="5th Year">5th Year College</option>
-                      </select>
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Field of Interest</label>
-                      <input
-                        type="text"
-                        name="field_of_interest"
-                        value={formData.field_of_interest || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        placeholder="e.g., Computer Science, Medicine, Engineering"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>GPA / General Average</label>
-                      <input
-                        type="number"
-                        name="gpa"
-                        value={formData.gpa || ""}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        placeholder="0-100 scale"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Preferred Fields Card - Improved Design */}
-              <div className="content-card">
-                <div className="card-header">
-                  <div className="card-header-content">
-                    <div className="card-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="card-title">Preferred Fields of Study</h2>
-                      <p className="card-subtitle">Select your areas of interest (multiple choices)</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <div className="form-group full-width">
-                    <label>Fields of Interest</label>
-                    <div className="tags-input-container">
-                      {isEditing ? (
-                        <div className="select-dropdown">
-                          <select
-                            name="preferred_fields"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value && !formData.preferred_fields?.includes(e.target.value)) {
-                                const newValue = formData.preferred_fields 
-                                  ? `${formData.preferred_fields},${e.target.value}`
-                                  : e.target.value;
-                                setFormData({ ...formData, preferred_fields: newValue });
-                              }
-                              e.target.value = ""; // Reset select
-                            }}
-                            disabled={!isEditing}
-                            className="dropdown-select"
-                          >
-                            <option value="">Add a field of interest...</option>
-                            {preferredFieldsOptions.map((field, index) => (
-                              <option key={index} value={field}>
-                                {field}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-                      
-                      <div className="selected-tags">
-                        {formData.preferred_fields?.split(',').filter(Boolean).map((field, index) => (
-                          <span key={index} className="tag">
-                            {field}
-                            {isEditing && (
-                              <button
-                                type="button"
-                                className="tag-remove"
-                                onClick={() => {
-                                  const currentFields = formData.preferred_fields?.split(',').filter(Boolean) || [];
-                                  const newFields = currentFields.filter(f => f !== field);
-                                  setFormData({ 
-                                    ...formData, 
-                                    preferred_fields: newFields.join(',') 
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        ))}
-                        {(!formData.preferred_fields || formData.preferred_fields.split(',').filter(Boolean).length === 0) && !isEditing && (
-                          <span className="no-tags">No fields selected</span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="field-hint">Select multiple fields that interest you for better scholarship matching</p>
-                  </div>
-                </div>
-              </div>
-
               {/* Additional Information Card */}
               <div className="content-card">
                 <div className="card-header">
@@ -822,6 +542,330 @@ function Profile() {
                         placeholder="e.g., Indigenous People, PWD, Solo Parent, etc."
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="content-column">
+              {/* Profile Insights Card */}
+              <div className="insights-card">
+                <h3 className="insights-title">Profile Insights</h3>
+                
+                <div className="insight-item completion-insight">
+                  <div className="insight-header">
+                    <span className="insight-label">Profile Completion</span>
+                    <span className="insight-value">{completionPercentage}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${completionPercentage}%` }}
+                    ></div>
+                  </div>
+                  <p className="insight-tip">
+                    {completionPercentage === 100 
+                      ? "🎉 Your profile is complete!" 
+                      : "Complete your profile to increase scholarship matches"}
+                  </p>
+                </div>
+
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <div className="stat-icon scholarships">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                      </svg>
+                    </div>
+                    <div className="stat-content">
+                      <div className="stat-value">{profileStrengthScore}</div>
+                      <div className="stat-label">Profile Strength Score</div>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-icon bookmarks">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                      </svg>
+                    </div>
+                    <div className="stat-content">
+                      <div className="stat-value">{stats.bookmarks}</div>
+                      <div className="stat-label">Bookmarks</div>
+                    </div>
+                  </div>
+
+                  <div className="stat-card">
+                    <div className="stat-icon matches">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div className="stat-content">
+                      <div className="stat-value">{eligibilityReadiness}</div>
+                      <div className="stat-label">Eligibility Readiness</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Academic Information Card */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Academic Information</h2>
+                      <p className="card-subtitle">Education and achievements</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>School/University</label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={formData.school || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Name of your educational institution"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Course/Program</label>
+                      <input
+                        type="text"
+                        name="course"
+                        value={formData.course || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="e.g., BS Computer Science"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Strand/Course (SHS)</label>
+                      <input
+                        type="text"
+                        name="strand_or_course"
+                        value={formData.strand_or_course || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="For Senior High School students"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Year Level</label>
+                      <select
+                        name="year_level"
+                        value={formData.year_level || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Year Level</option>
+                        <option value="Grade 7">Grade 7</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                        <option value="1st Year">1st Year College</option>
+                        <option value="2nd Year">2nd Year College</option>
+                        <option value="3rd Year">3rd Year College</option>
+                        <option value="4th Year">4th Year College</option>
+                        <option value="5th Year">5th Year College</option>
+                      </select>
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Field of Interest</label>
+                      <input
+                        type="text"
+                        name="field_of_interest"
+                        value={formData.field_of_interest || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="e.g., Computer Science, Medicine, Engineering"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>GPA / General Average</label>
+                      <input
+                        type="number"
+                        name="gpa"
+                        value={formData.gpa || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="0-100 scale"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Family Background Card */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Family Background</h2>
+                      <p className="card-subtitle">Family and financial information</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Parents' Occupation</label>
+                      <input
+                        type="text"
+                        name="parents_occupation"
+                        value={formData.parents_occupation || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="What do your parents do for work?"
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Parents' Education</label>
+                      <input
+                        type="text"
+                        name="parents_education"
+                        value={formData.parents_education || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        placeholder="Highest educational attainment of parents"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Household Income Range</label>
+                      <select
+                        name="household_income_range"
+                        value={formData.household_income_range || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Range</option>
+                        <option value="Below 10,000">Below ₱10,000</option>
+                        <option value="10,000 - 20,000">₱10,000 - ₱20,000</option>
+                        <option value="20,000 - 30,000">₱20,000 - ₱30,000</option>
+                        <option value="30,000 - 50,000">₱30,000 - ₱50,000</option>
+                        <option value="50,000 - 100,000">₱50,000 - ₱100,000</option>
+                        <option value="Above 100,000">Above ₱100,000</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Siblings in School</label>
+                      <input
+                        type="number"
+                        name="siblings_in_school"
+                        value={formData.siblings_in_school || ""}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        min="0"
+                        max="20"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferred Fields Card - Improved Design */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Preferred Fields of Study</h2>
+                      <p className="card-subtitle">Select your areas of interest (multiple choices)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-group full-width">
+                    <label>Fields of Interest</label>
+                    <div className="tags-input-container">
+                      {isEditing ? (
+                        <div className="select-dropdown">
+                          <select
+                            name="preferred_fields"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value && !formData.preferred_fields?.includes(e.target.value)) {
+                                const newValue = formData.preferred_fields
+                                  ? `${formData.preferred_fields},${e.target.value}`
+                                  : e.target.value;
+                                setFormData({ ...formData, preferred_fields: newValue });
+                              }
+                              e.target.value = ""; // Reset select
+                            }}
+                            disabled={!isEditing}
+                            className="dropdown-select"
+                          >
+                            <option value="">Add a field of interest...</option>
+                            {preferredFieldsOptions.map((field, index) => (
+                              <option key={index} value={field}>
+                                {field}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+
+                      <div className="selected-tags">
+                        {formData.preferred_fields?.split(',').filter(Boolean).map((field, index) => (
+                          <span key={index} className="tag">
+                            {field}
+                            {isEditing && (
+                              <button
+                                type="button"
+                                className="tag-remove"
+                                onClick={() => {
+                                  const currentFields = formData.preferred_fields?.split(',').filter(Boolean) || [];
+                                  const newFields = currentFields.filter(f => f !== field);
+                                  setFormData({
+                                    ...formData,
+                                    preferred_fields: newFields.join(',')
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                        {(!formData.preferred_fields || formData.preferred_fields.split(',').filter(Boolean).length === 0) && !isEditing && (
+                          <span className="no-tags">No fields selected</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="field-hint">Select multiple fields that interest you for better scholarship matching</p>
                   </div>
                 </div>
               </div>

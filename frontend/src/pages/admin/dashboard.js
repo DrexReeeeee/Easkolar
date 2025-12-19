@@ -1,5 +1,5 @@
 // frontend/src/pages/admin/dashboard.js
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./styles/admin.css";
 
@@ -18,61 +18,79 @@ const Dashboard = () => {
   });
   const [editScholarship, setEditScholarship] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [saving, setSaving] = useState(false);
+  
+  // Pagination state for scholarships table
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  
+  // Pagination state for recent activity
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityPerPage] = useState(5);
 
   const token = localStorage.getItem("token");
   const API_URL = "http://localhost:5001/api/admin/scholarships";
 
- 
-  const api = axios.create({
-    baseURL: API_URL,
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const api = useMemo(() => {
+    return axios.create({
+      baseURL: API_URL,
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    });
+  }, [token]);
 
-  // Fetch scholarships
-  const fetchScholarships = async () => {
+  const fetchScholarships = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get("/");
-      // Updated to match backend response structure
       setScholarships(res.data.scholarships || []);
-      setError(""); // Clear any previous errors
+      setError("");
     } catch (err) {
       console.error("Fetch Scholarships Error:", err);
       setError(
         "Failed to fetch scholarships: " +
           (err.response?.data?.message || err.message)
       );
-      setScholarships([]); // Reset to empty array on error
+      setScholarships([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
     fetchScholarships();
-  }, []);
+  }, [fetchScholarships]);
 
-  // Add ESC key support for modal
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && showModal) {
-        setShowModal(false);
-        setEditScholarship(null);
+      if (e.key === "Escape") {
+        if (showModal) {
+          setShowModal(false);
+          setEditScholarship(null);
+        } else if (showLogoutModal) {
+          setShowLogoutModal(false);
+        }
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [showModal]);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showModal, showLogoutModal]);
 
-  // Input change handler
-  const handleInputChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleLogout = () => {
+    setShowLogoutModal(true);
   };
 
-  // Add new scholarship - UPDATED for backend structure
+  const confirmLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/signin";
+  };
+
+  const handleInputChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleAddScholarship = async (e) => {
     e.preventDefault();
     setError("");
@@ -81,8 +99,7 @@ const Dashboard = () => {
     try {
       const response = await api.post("/", form);
 
-      // Updated success check - look for scholarship data in response
-      if (response.data.scholarship || response.status === 201) {
+      if (response.data?.scholarship || response.status === 201) {
         setForm({
           name: "",
           description: "",
@@ -92,7 +109,7 @@ const Dashboard = () => {
           registration_link: "",
         });
         setSuccess("Scholarship added successfully!");
-        fetchScholarships();
+        await fetchScholarships();
         setTimeout(() => setSuccess(""), 3000);
       }
     } catch (err) {
@@ -103,7 +120,6 @@ const Dashboard = () => {
     }
   };
 
-  // Delete scholarship - UPDATED for backend structure
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this scholarship?"))
       return;
@@ -111,10 +127,9 @@ const Dashboard = () => {
     try {
       const response = await api.delete(`/${id}`);
 
-      // Updated success check - assume success on 200 status
       if (response.status === 200) {
         setSuccess("Scholarship deleted successfully!");
-        fetchScholarships();
+        await fetchScholarships();
         setTimeout(() => setSuccess(""), 3000);
       }
     } catch (err) {
@@ -125,7 +140,6 @@ const Dashboard = () => {
     }
   };
 
-  // Open edit modal
   const handleEdit = (scholarship) => {
     setEditScholarship(scholarship);
     setForm({
@@ -139,7 +153,6 @@ const Dashboard = () => {
     setShowModal(true);
   };
 
-  // Update scholarship - UPDATED for backend structure
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError("");
@@ -152,19 +165,11 @@ const Dashboard = () => {
     try {
       const response = await api.put(`/${editScholarship.scholarship_id}`, form);
 
-      // Updated success check - look for scholarship data or 200 status
-      if (response.data.scholarship || response.status === 200) {
-        // Close modal immediately
+      if (response.data?.scholarship || response.status === 200) {
         setShowModal(false);
         setEditScholarship(null);
-
-        // Refresh scholarships in the background
         await fetchScholarships();
-
-        // Show success notification
         setSuccess("Changes saved successfully!");
-        
-        // Auto-clear success message after 3 seconds
         setTimeout(() => setSuccess(""), 3000);
       }
     } catch (err) {
@@ -186,54 +191,106 @@ const Dashboard = () => {
     (s) => s.deadline && new Date(s.deadline) <= new Date()
   ).length;
 
+  // Pagination for scholarships table
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentScholarships = scholarships.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(scholarships.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Pagination for recent activity
+  const activityIndexOfLast = activityPage * activityPerPage;
+  const activityIndexOfFirst = activityIndexOfLast - activityPerPage;
+  const currentActivities = scholarships.slice(activityIndexOfFirst, activityIndexOfLast);
+  const totalActivityPages = Math.ceil(scholarships.length / activityPerPage);
+
+  const handleActivityPageChange = (pageNumber) => {
+    setActivityPage(pageNumber);
+  };
+
+  const handleActivityNextPage = () => {
+    if (activityPage < totalActivityPages) {
+      setActivityPage(activityPage + 1);
+    }
+  };
+
+  const handleActivityPrevPage = () => {
+    if (activityPage > 1) {
+      setActivityPage(activityPage - 1);
+    }
+  };
+
   return (
     <div className="admin-dashboard-page">
       {/* Header Section */}
       <div className="admin-header">
         <div className="admin-cover">
           <div className="cover-photo">
-            <div className="cover-pattern"></div>
+            <div className="cover-pattern" />
           </div>
-          
+          <button className="logout-btn" onClick={handleLogout}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Log Out
+              </button>
           <div className="admin-header-content">
             <div className="admin-avatar-section">
               <div className="avatar-container">
                 <div className="avatar-placeholder admin-avatar">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                   </svg>
                 </div>
               </div>
-            </div>
-            
-            <div className="admin-info-section">
-              <div className="admin-name-badge">
-                <h1 className="admin-name">Admin Dashboard</h1>
-                <span className="verified-badge admin-badge">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                  </svg>
-                  Administrator
-                </span>
+
+              <div className="admin-info-section">
+                <div className="admin-name-badge">
+                  <h1 className="admin-name">Admin Dashboard</h1>
+                  <span className="admin-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Administrator
+                  </span>
+                </div>
+                <p className="admin-subtitle">Manage scholarships and monitor system activity</p>
               </div>
-              <p className="admin-subtitle">
-                Manage scholarships and monitor system activity
-              </p>
             </div>
 
-            <div className="admin-stats-preview">
-              <div className="stat-preview">
-                <div className="stat-preview-value">{totalScholarships}</div>
-                <div className="stat-preview-label">Total Scholarships</div>
+            <div className="admin-header-right">
+              <div className="admin-stats-preview">
+                <div className="stat-preview">
+                  <div className="stat-preview-value">{totalScholarships}</div>
+                  <div className="stat-preview-label">Total</div>
+                </div>
+                <div className="stat-preview">
+                  <div className="stat-preview-value">{activeScholarships}</div>
+                  <div className="stat-preview-label">Active</div>
+                </div>
+                <div className="stat-preview">
+                  <div className="stat-preview-value">{expiredScholarships}</div>
+                  <div className="stat-preview-label">Expired</div>
+                </div>
               </div>
-              <div className="stat-preview">
-                <div className="stat-preview-value">{activeScholarships}</div>
-                <div className="stat-preview-label">Active</div>
-              </div>
-              <div className="stat-preview">
-                <div className="stat-preview-value">{expiredScholarships}</div>
-                <div className="stat-preview-label">Expired</div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -246,8 +303,8 @@ const Dashboard = () => {
           {success && (
             <div className="alert alert-success">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
               {success}
             </div>
@@ -255,9 +312,9 @@ const Dashboard = () => {
           {error && (
             <div className="alert alert-error">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               {error}
             </div>
@@ -265,23 +322,17 @@ const Dashboard = () => {
 
           {/* Navigation Tabs */}
           <div className="admin-tabs">
-            <button 
-              className={`tab-button ${activeTab === "overview" ? "active" : ""}`}
-              onClick={() => setActiveTab("overview")}
-            >
+            <button className={`tab-button ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
               Overview
             </button>
-            <button 
-              className={`tab-button ${activeTab === "scholarships" ? "active" : ""}`}
-              onClick={() => setActiveTab("scholarships")}
-            >
+            <button className={`tab-button ${activeTab === "scholarships" ? "active" : ""}`} onClick={() => setActiveTab("scholarships")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
               </svg>
               Manage Scholarships
             </button>
@@ -289,32 +340,32 @@ const Dashboard = () => {
 
           {/* Overview Tab */}
           {activeTab === "overview" && (
-            <div className="content-grid">
-              <div className="content-column">
-                {/* Quick Stats Card */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="18" y1="20" x2="18" y2="10"/>
-                          <line x1="12" y1="20" x2="12" y2="4"/>
-                          <line x1="6" y1="20" x2="6" y2="14"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="card-title">Dashboard Overview</h2>
-                        <p className="card-subtitle">System statistics and quick actions</p>
-                      </div>
+            <div className="content-grid overview-layout">
+              {/* Dashboard Overview Card - Left Top */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Dashboard Overview</h2>
+                      <p className="card-subtitle">System statistics and quick actions</p>
                     </div>
                   </div>
+                </div>
 
+                <div className="card-body">
                   <div className="stats-grid-admin">
                     <div className="stat-card-admin">
                       <div className="stat-icon-admin total">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                          <path d="M6 12v5c3 3 9 3 12 0v-5" />
                         </svg>
                       </div>
                       <div className="stat-content-admin">
@@ -326,8 +377,8 @@ const Dashboard = () => {
                     <div className="stat-card-admin">
                       <div className="stat-icon-admin active">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                          <polyline points="22 4 12 14.01 9 11.01"/>
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                          <polyline points="22 4 12 14.01 9 11.01" />
                         </svg>
                       </div>
                       <div className="stat-content-admin">
@@ -339,8 +390,8 @@ const Dashboard = () => {
                     <div className="stat-card-admin">
                       <div className="stat-icon-admin expired">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <polyline points="12 6 12 12 16 14"/>
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
                         </svg>
                       </div>
                       <div className="stat-content-admin">
@@ -350,40 +401,39 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Quick Actions Card */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                          <line x1="12" y1="9" x2="12" y2="13"/>
-                          <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="card-title">Quick Actions</h2>
-                        <p className="card-subtitle">Common administrative tasks</p>
-                      </div>
+              {/* Quick Actions Card - Right Top */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Quick Actions</h2>
+                      <p className="card-subtitle">Common administrative tasks</p>
                     </div>
                   </div>
+                </div>
 
+                <div className="card-body">
                   <div className="quick-actions">
-                    <button 
-                      className="quick-action-btn"
-                      onClick={() => setActiveTab("scholarships")}
-                    >
+                    <button className="quick-action-btn" onClick={() => setActiveTab("scholarships")}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 5v14M5 12h14"/>
+                        <path d="M12 5v14M5 12h14" />
                       </svg>
                       Add New Scholarship
                     </button>
                     <button className="quick-action-btn">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
                       </svg>
                       Export Data
                     </button>
@@ -391,43 +441,96 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="content-column">
-                {/* Recent Activity Card */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="card-title">Recent Activity</h2>
-                        <p className="card-subtitle">Latest system updates</p>
-                      </div>
+              {/* Recent Activity Card - Full Width Below */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Recent Activity</h2>
+                      <p className="card-subtitle">Latest system updates</p>
                     </div>
                   </div>
+                </div>
 
+                <div className="card-body">
                   <div className="activity-list">
-                    {scholarships.slice(0, 5).map((scholarship, index) => (
+                    {currentActivities.map((scholarship, index) => (
                       <div key={scholarship.scholarship_id || index} className="activity-item">
                         <div className="activity-icon">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
                           </svg>
                         </div>
                         <div className="activity-content">
                           <div className="activity-title">{scholarship.name}</div>
-                          <div className="activity-time">
-                            Updated {new Date(scholarship.updated_at).toLocaleDateString()}
-                          </div>
+                          <div className="activity-time">Updated {new Date(scholarship.updated_at).toLocaleDateString()}</div>
                         </div>
                       </div>
                     ))}
-                    {scholarships.length === 0 && (
-                      <div className="no-activity">No recent activity</div>
-                    )}
+                    {scholarships.length === 0 && <div className="no-activity">No recent activity</div>}
                   </div>
+
+                  {/* Activity Pagination */}
+                  {scholarships.length > activityPerPage && (
+                    <div className="pagination-container">
+                      <div className="pagination-info">
+                        Showing {activityIndexOfFirst + 1} to {Math.min(activityIndexOfLast, scholarships.length)} of {scholarships.length} activities
+                      </div>
+                      <div className="pagination-controls">
+                        <button 
+                          className="pagination-btn" 
+                          onClick={handleActivityPrevPage}
+                          disabled={activityPage === 1}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="15 18 9 12 15 6" />
+                          </svg>
+                        </button>
+                        
+                        <div className="pagination-pages">
+                          {[...Array(totalActivityPages)].map((_, index) => {
+                            const pageNumber = index + 1;
+                            if (
+                              pageNumber === 1 || 
+                              pageNumber === totalActivityPages || 
+                              (pageNumber >= activityPage - 1 && pageNumber <= activityPage + 1)
+                            ) {
+                              return (
+                                <button
+                                  key={pageNumber}
+                                  className={`page-number ${activityPage === pageNumber ? 'active' : ''}`}
+                                  onClick={() => handleActivityPageChange(pageNumber)}
+                                >
+                                  {pageNumber}
+                                </button>
+                              );
+                            } else if (
+                              pageNumber === activityPage - 2 || 
+                              pageNumber === activityPage + 2
+                            ) {
+                              return <span key={pageNumber} className="page-number">...</span>;
+                            }
+                            return null;
+                          })}
+                        </div>
+                        
+                        <button 
+                          className="pagination-btn" 
+                          onClick={handleActivityNextPage}
+                          disabled={activityPage === totalActivityPages}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -435,205 +538,218 @@ const Dashboard = () => {
 
           {/* Scholarships Management Tab */}
           {activeTab === "scholarships" && (
-            <div className="content-grid">
-              <div className="content-column">
-                {/* Add Scholarship Card */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="card-title">Add New Scholarship</h2>
-                        <p className="card-subtitle">Create a new scholarship opportunity</p>
-                      </div>
+            <div className="content-grid scholarships-layout">
+              {/* Add Scholarship Card with Two Column Form */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Add New Scholarship</h2>
+                      <p className="card-subtitle">Create a new scholarship opportunity</p>
                     </div>
                   </div>
+                </div>
 
-                  <div className="form-section">
-                    <form onSubmit={handleAddScholarship}>
-                      <div className="form-grid">
-                        <div className="form-group full-width">
-                          <label>Scholarship Name *</label>
-                          <input
-                            type="text"
-                            name="name"
-                            placeholder="Enter scholarship name"
-                            value={form.name}
-                            onChange={handleInputChange}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Deadline</label>
-                          <input
-                            type="date"
-                            name="deadline"
-                            value={form.deadline}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="form-group full-width">
-                          <label>Description</label>
-                          <textarea
-                            name="description"
-                            placeholder="Enter scholarship description"
-                            value={form.description}
-                            onChange={handleInputChange}
-                            rows="3"
-                          />
-                        </div>
-                        <div className="form-group full-width">
-                          <label>Eligibility Criteria</label>
-                          <textarea
-                            name="eligibility"
-                            placeholder="Enter eligibility requirements"
-                            value={form.eligibility}
-                            onChange={handleInputChange}
-                            rows="3"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Website Link</label>
-                          <input
-                            type="url"
-                            name="website_link"
-                            placeholder="https://example.com"
-                            value={form.website_link}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Registration Link</label>
-                          <input
-                            type="url"
-                            name="registration_link"
-                            placeholder="https://example.com/apply"
-                            value={form.registration_link}
-                            onChange={handleInputChange}
-                          />
-                        </div>
+                <div className="card-body">
+                  <form onSubmit={handleAddScholarship} className="form-two-column">
+                    <div className="form-column-left">
+                      <div className="form-group">
+                        <label>Scholarship Name *</label>
+                        <input type="text" name="name" placeholder="Enter scholarship name" value={form.name} onChange={handleInputChange} required />
                       </div>
-                      <div className="form-actions">
-                        <button type="submit" className="save-changes-btn">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                            <polyline points="17 21 17 13 7 13 7 21"/>
-                            <polyline points="7 3 7 8 15 8"/>
-                          </svg>
-                          Add Scholarship
-                        </button>
+                      <div className="form-group">
+                        <label>Deadline</label>
+                        <input type="date" name="deadline" value={form.deadline} onChange={handleInputChange} />
                       </div>
-                    </form>
-                  </div>
+                      <div className="form-group">
+                        <label>Description</label>
+                        <textarea name="description" placeholder="Enter scholarship description" value={form.description} onChange={handleInputChange} rows="5" />
+                      </div>
+                    </div>
+
+                    <div className="form-column-right">
+                      <div className="form-group">
+                        <label>Eligibility Criteria</label>
+                        <textarea name="eligibility" placeholder="Enter eligibility requirements" value={form.eligibility} onChange={handleInputChange} rows="5" />
+                      </div>
+                      <div className="form-group">
+                        <label>Website Link</label>
+                        <input type="url" name="website_link" placeholder="https://example.com" value={form.website_link} onChange={handleInputChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>Registration Link</label>
+                        <input type="url" name="registration_link" placeholder="https://example.com/apply" value={form.registration_link} onChange={handleInputChange} />
+                      </div>
+                    </div>
+
+                    <div className="form-actions-full">
+                      <button type="submit" className="save-changes-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Add Scholarship
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
 
-              <div className="content-column">
-                {/* Scholarships List Card */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <div className="card-header-content">
-                      <div className="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="card-title">Manage Scholarships</h2>
-                        <p className="card-subtitle">View and edit all scholarships</p>
-                      </div>
+              {/* Scholarships List Card */}
+              <div className="content-card">
+                <div className="card-header">
+                  <div className="card-header-content">
+                    <div className="card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="card-title">Manage Scholarships</h2>
+                      <p className="card-subtitle">View and edit all scholarships</p>
                     </div>
                   </div>
+                </div>
 
+                <div className="card-body">
                   <div className="scholarships-list">
                     {loading ? (
                       <div className="loading-state">
-                        <div className="loading-spinner"></div>
+                        <div className="loading-spinner" />
                         <p>Loading scholarships...</p>
                       </div>
                     ) : scholarships.length === 0 ? (
                       <div className="empty-state">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                          <path d="M6 12v5c3 3 9 3 12 0v-5" />
                         </svg>
                         <h3>No Scholarships Found</h3>
                         <p>Get started by adding your first scholarship opportunity.</p>
                       </div>
                     ) : (
-                      <div className="scholarships-table-container">
-                        <table className="scholarships-table">
-                          <thead>
-                            <tr>
-                              <th>Name</th>
-                              <th>Deadline</th>
-                              <th>Status</th>
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {scholarships.map((scholarship) => (
-                              <tr key={scholarship.scholarship_id}>
-                                <td>
-                                  <div className="scholarship-name">{scholarship.name}</div>
-                                  <div className="scholarship-description">
-                                    {scholarship.description?.substring(0, 60)}...
-                                  </div>
-                                </td>
-                                <td>
-                                  {scholarship.deadline ? (
-                                    <div className="deadline-info">
-                                      <div className="deadline-date">
-                                        {new Date(scholarship.deadline).toLocaleDateString()}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    'No deadline'
-                                  )}
-                                </td>
-                                <td>
-                                  <span className={`status-badge ${
-                                    !scholarship.deadline ? 'status-active' : 
-                                    new Date(scholarship.deadline) > new Date() ? 'status-active' : 'status-expired'
-                                  }`}>
-                                    {!scholarship.deadline ? 'Active' : 
-                                     new Date(scholarship.deadline) > new Date() ? 'Active' : 'Expired'}
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className="action-buttons">
-                                    <button 
-                                      className="action-btn edit-btn"
-                                      onClick={() => handleEdit(scholarship)}
-                                      title="Edit scholarship"
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                      </svg>
-                                      Edit
-                                    </button>
-                                    <button 
-                                      className="action-btn delete-btn"
-                                      onClick={() => handleDelete(scholarship.scholarship_id)}
-                                      title="Delete scholarship"
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                      </svg>
-                                      Delete
-                                    </button>
-                                  </div>
-                                </td>
+                      <>
+                        <div className="scholarships-table-container">
+                          <table className="scholarships-table">
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {currentScholarships.map((scholarship) => (
+                                <tr key={scholarship.scholarship_id}>
+                                  <td>
+                                    <div className="scholarship-name">{scholarship.name}</div>
+                                    <div className="scholarship-description">{scholarship.description?.substring(0, 60)}...</div>
+                                  </td>
+                                  <td>
+                                    {scholarship.deadline ? (
+                                      <div className="deadline-info">
+                                        <div className="deadline-date">{new Date(scholarship.deadline).toLocaleDateString()}</div>
+                                      </div>
+                                    ) : (
+                                      "No deadline"
+                                    )}
+                                  </td>
+                                  <td>
+                                    <span
+                                      className={`status-badge ${
+                                        !scholarship.deadline ? "status-active" : new Date(scholarship.deadline) > new Date() ? "status-active" : "status-expired"
+                                      }`}
+                                    >
+                                      {!scholarship.deadline ? "Active" : new Date(scholarship.deadline) > new Date() ? "Active" : "Expired"}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <div className="action-buttons">
+                                      <button className="action-btn edit-btn" onClick={() => handleEdit(scholarship)} title="Edit scholarship">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                        Edit
+                                      </button>
+                                      <button className="action-btn delete-btn" onClick={() => handleDelete(scholarship.scholarship_id)} title="Delete scholarship">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination */}
+                        {scholarships.length > itemsPerPage && (
+                          <div className="pagination-container">
+                            <div className="pagination-info">
+                              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, scholarships.length)} of {scholarships.length} scholarships
+                            </div>
+                            <div className="pagination-controls">
+                              <button 
+                                className="pagination-btn" 
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                              </button>
+                              
+                              <div className="pagination-pages">
+                                {[...Array(totalPages)].map((_, index) => {
+                                  const pageNumber = index + 1;
+                                  if (
+                                    pageNumber === 1 || 
+                                    pageNumber === totalPages || 
+                                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                  ) {
+                                    return (
+                                      <button
+                                        key={pageNumber}
+                                        className={`page-number ${currentPage === pageNumber ? 'active' : ''}`}
+                                        onClick={() => handlePageChange(pageNumber)}
+                                      >
+                                        {pageNumber}
+                                      </button>
+                                    );
+                                  } else if (
+                                    pageNumber === currentPage - 2 || 
+                                    pageNumber === currentPage + 2
+                                  ) {
+                                    return <span key={pageNumber} className="page-number">...</span>;
+                                  }
+                                  return null;
+                                })}
+                              </div>
+                              
+                              <button 
+                                className="pagination-btn" 
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -645,7 +761,7 @@ const Dashboard = () => {
 
       {/* Edit Modal */}
       {showModal && editScholarship && (
-        <div 
+        <div
           className="modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -657,7 +773,7 @@ const Dashboard = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h2>Edit Scholarship</h2>
-              <button 
+              <button
                 className="modal-close"
                 onClick={() => {
                   setShowModal(false);
@@ -665,80 +781,44 @@ const Dashboard = () => {
                 }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
-            
+
             <form onSubmit={handleUpdate}>
               <div className="form-grid">
                 <div className="form-group full-width required">
                   <label>Scholarship Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Enter scholarship name"
-                    value={form.name}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <input type="text" name="name" placeholder="Enter scholarship name" value={form.name} onChange={handleInputChange} required />
                 </div>
                 <div className="form-group">
                   <label>Deadline</label>
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={form.deadline}
-                    onChange={handleInputChange}
-                  />
+                  <input type="date" name="deadline" value={form.deadline} onChange={handleInputChange} />
                 </div>
                 <div className="form-group full-width">
                   <label>Description</label>
-                  <textarea
-                    name="description"
-                    placeholder="Enter scholarship description"
-                    value={form.description}
-                    onChange={handleInputChange}
-                    rows="3"
-                  />
+                  <textarea name="description" placeholder="Enter scholarship description" value={form.description} onChange={handleInputChange} rows="3" />
                 </div>
                 <div className="form-group full-width">
                   <label>Eligibility Criteria</label>
-                  <textarea
-                    name="eligibility"
-                    placeholder="Enter eligibility requirements"
-                    value={form.eligibility}
-                    onChange={handleInputChange}
-                    rows="3"
-                  />
+                  <textarea name="eligibility" placeholder="Enter eligibility requirements" value={form.eligibility} onChange={handleInputChange} rows="3" />
                 </div>
                 <div className="form-group">
                   <label>Website Link</label>
-                  <input
-                    type="url"
-                    name="website_link"
-                    placeholder="https://example.com"
-                    value={form.website_link}
-                    onChange={handleInputChange}
-                  />
+                  <input type="url" name="website_link" placeholder="https://example.com" value={form.website_link} onChange={handleInputChange} />
                 </div>
                 <div className="form-group">
                   <label>Registration Link</label>
-                  <input
-                    type="url"
-                    name="registration_link"
-                    placeholder="https://example.com/apply"
-                    value={form.registration_link}
-                    onChange={handleInputChange}
-                  />
+                  <input type="url" name="registration_link" placeholder="https://example.com/apply" value={form.registration_link} onChange={handleInputChange} />
                 </div>
               </div>
-              
+
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="cancel-btn" 
+                <button
+                  type="button"
+                  className="cancel-btn"
                   onClick={() => {
                     setShowModal(false);
                     setEditScholarship(null);
@@ -747,22 +827,18 @@ const Dashboard = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="save-changes-btn"
-                  disabled={saving}
-                >
+                <button type="submit" className="save-changes-btn" disabled={saving}>
                   {saving ? (
                     <>
-                      <div className="loading-spinner-small"></div>
+                      <div className="loading-spinner-small" />
                       Saving...
                     </>
                   ) : (
                     <>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
                       </svg>
                       Save Changes
                     </>
@@ -770,6 +846,46 @@ const Dashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="modal-overlay logout-modal" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowLogoutModal(false);
+          }
+        }}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <div className="warning-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h2>Confirm Logout</h2>
+            </div>
+            
+            <div className="modal-body">
+              <p>Are you sure you want to log out? You will be redirected to the login page.</p>
+            </div>
+            
+            <div className="modal-actions">
+              <button type="button" className="cancel-btn" onClick={() => setShowLogoutModal(false)}>
+                Cancel
+              </button>
+              <button type="button" className="logout-confirm-btn" onClick={confirmLogout}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Log Out
+              </button>
+            </div>
           </div>
         </div>
       )}

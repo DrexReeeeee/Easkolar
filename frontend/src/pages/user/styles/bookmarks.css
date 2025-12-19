@@ -1,110 +1,338 @@
-/* frontend/src/styles/bookmarks.css */
 .bookmarks-page {
-  padding: 2rem 0;
+  padding: 1rem 0 2rem;
   min-height: 100vh;
-  background: var(--background-color);
 }
 
-.content-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 2.5rem 0 1.5rem 0;
-}
-
-.section-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-color);
-  margin: 0;
-}
-
-/* Enhanced Scholarships Grid */
-.scholarship-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.25rem;
+/* Toolbar */
+.bookmarks-page .toolbar-section {
+  background: transparent;
+  padding: 0;
   margin-bottom: 2rem;
 }
 
-.scholarship-card {
+.bookmarks-page .toolbar-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bookmarks-page .search-container {
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.bookmarks-page .search-box {
+  position: relative;
+  width: 100%;
+}
+
+.bookmarks-page .search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--primary-font);
+  font-size: var(--font-size-sm);
+  background: var(--background-color);
+  color: var(--text-color);
+  transition: border-color 0.2s ease;
+}
+
+.bookmarks-page .search-box input:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+}
+
+.bookmarks-page .search-box input::placeholder {
+  color: var(--text-muted);
+}
+
+.bookmarks-page .search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.bookmarks-page .bookmarks-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  background: var(--primary-bg);
+  border-radius: var(--radius-md);
+}
+
+/* Content states */
+.bookmarks-page .loading-state, .bookmarks-page .error-state, .bookmarks-page .empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--background-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 12px var(--shadow-color);
+  margin: 2rem 0;
+}
+
+.bookmarks-page .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-accent);
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.bookmarks-page .error-icon, .bookmarks-page .empty-icon {
+  margin: 0 auto 1.5rem;
+  color: var(--text-muted);
+}
+
+.bookmarks-page .error-state h3, .bookmarks-page .empty-state h3 {
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.bookmarks-page .error-state p, .bookmarks-page .empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+.bookmarks-page .primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--tert-accent);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.bookmarks-page .primary-btn:hover {
+  opacity: 0.9;
+}
+
+.bookmarks-page .secondary-btn {
+  background: transparent;
+  color: var(--primary-accent);
+  border: 2px solid var(--primary-accent);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.bookmarks-page .secondary-btn:hover {
+  background: var(--primary-accent);
+  color: white;
+}
+
+/* Section Headers */
+.bookmarks-page .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2.5rem 0 1.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bookmarks-page .section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--tert-accent);
+  margin: 0;
+}
+
+.bookmarks-page .results-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Enhanced Scholarships Grid */
+.bookmarks-page .scholarship-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.bookmarks-page .scholarship-card {
   background: var(--background-color);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border-color);
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 260px;
+  min-height: 280px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
 }
 
-.scholarship-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px var(--shadow-color);
+.bookmarks-page .scholarship-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
-.scholarship-card.matched {
-  background: linear-gradient(135deg, #667eea15, #a9bdf915);
-  border-color: var(--secondary-bg);
-}
-
-/* Enhanced Card Header */
-.card-header {
+.bookmarks-page .card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.scholarship-name {
+.bookmarks-page .scholarship-name-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.bookmarks-page .scholarship-name {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-color);
+  color: var(--tert-accent);
   line-height: 1.4;
-  flex: 1;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.bookmark-icon {
+.bookmarks-page .scholarship-provider {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.bookmarks-page .scholarship-provider svg {
+  flex-shrink: 0;
+}
+
+.bookmarks-page .card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Bookmark Icon */
+.bookmarks-page .bookmark-icon {
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0.5rem;
-  color: var(--text-muted);
-  font-size: 1.5rem;
+  color: var(--secondary-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
   border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  min-width: 36px;
+  min-height: 36px;
 }
 
-.bookmark-icon:hover {
-  color: var(--secondary-accent);
-  background: var(--primary-bg);
-  transform: scale(1.1);
+.bookmarks-page .bookmark-icon:hover {
+  background: rgba(109, 25, 131, 0.12);
+  transform: scale(1.05);
 }
 
-.bookmark-icon.active {
-  color: var(--secondary-accent);
+.bookmarks-page .bookmark-icon.active {
+  background: rgba(109, 25, 131, 0.08);
 }
 
-/* Scholarship Info Section */
-.scholar-info-section {
+.bookmarks-page .bookmark-icon.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bookmarks-page .bookmark-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.bookmarks-page .bookmark-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.bookmarks-page .card-content {
   flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.bookmarks-page .scholarship-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
-.scholar-description {
+.bookmarks-page .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+}
+
+.bookmarks-page .meta-item svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.bookmarks-page .meta-item.urgent svg {
+  color: #e53e3e;
+}
+
+.bookmarks-page .meta-value {
+  font-weight: var(--font-weight-medium);
+}
+
+.bookmarks-page .days-remaining {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+.bookmarks-page .scholarship-description p {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.5;
@@ -115,166 +343,449 @@
   overflow: hidden;
 }
 
-/* Enhanced Card Footer */
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.bookmarks-page .card-footer {
   margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
 }
 
-.deadline-badge {
-  background: var(--secondary-bg);
-  color: var(--tert-accent);
-  padding: 0.5rem 1rem;
+.bookmarks-page .view-more-btn {
+  width: 100%;
+  padding: 0.875rem 1rem;
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+  font-family: var(--primary-font);
   font-weight: var(--font-weight-semibold);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.deadline-badge::before {
-  content: "⏰";
   font-size: var(--font-size-sm);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-/* Enhanced Empty State */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
+.bookmarks-page .view-more-btn:hover {
+  background: var(--tert-accent);
+  border-color: var(--tert-accent);
+  color: white;
+}
+
+.bookmarks-page .bookmark-indicator {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  color: var(--secondary-accent);
+  opacity: 0.9;
+}
+
+/* Enhanced Modal */
+.bookmarks-page .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bookmarks-page .modal-content {
   background: var(--background-color);
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px var(--shadow-color);
-  margin: 2rem 0;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
 }
 
-.empty-state h3 {
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Scrollbar for Modal */
+.bookmarks-page .modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bookmarks-page .modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bookmarks-page .modal-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.bookmarks-page .modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.bookmarks-page .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--background-color);
+  z-index: 1;
+}
+
+.bookmarks-page .modal-header h2 {
+  color: var(--tert-accent);
+  margin-right: 2rem;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+  flex: 1;
+}
+
+.bookmarks-page .modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bookmarks-page .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.bookmarks-page .close-btn:hover {
   color: var(--text-color);
-  margin-bottom: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.bookmarks-page .modal-body {
+  padding: 1.5rem 2rem 2rem;
+}
+
+.bookmarks-page .modal-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.bookmarks-page .detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--primary-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.bookmarks-page .detail-icon {
+  flex-shrink: 0;
+  color: var(--primary-accent);
+}
+
+.bookmarks-page .detail-item label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bookmarks-page .detail-item p {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+}
+
+.bookmarks-page .detail-item .amount {
+  color: var(--secondary-accent);
+  font-size: var(--font-size-md);
+}
+
+.bookmarks-page .detail-item .deadline.urgent {
+  color: #e53e3e;
+}
+
+.bookmarks-page .detail-section {
+  margin-bottom: 2rem;
+}
+
+.bookmarks-page .detail-section h4 {
+  color: var(--tert-accent);
+  margin-bottom: 0.75rem;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
 
-.empty-state p {
-  color: var(--text-muted);
-  margin-bottom: 2rem;
-  font-size: var(--font-size-md);
+.bookmarks-page .detail-section p {
+  line-height: 1.6;
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
 }
 
-.explore-btn {
+.bookmarks-page .action-section {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.bookmarks-page .apply-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  background: var(--primary-gradient);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
   text-decoration: none;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: var(--tert-accent);
+  color: white;
+  border-radius: var(--radius-md);
   font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   border: none;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 
-.explore-btn:hover {
+.bookmarks-page .apply-btn:hover {
   opacity: 0.9;
-  color: white;
 }
 
-/* Enhanced Loading State */
-.loading-state {
-  text-align: center;
-  padding: 4rem 2rem;
+/* Pagination Styles */
+.bookmarks-page .pagination-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.bookmarks-page .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bookmarks-page .pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
   background: var(--background-color);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px var(--shadow-color);
-  margin: 2rem 0;
+  font-family: var(--primary-font);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.loading-spinner {
-  width: 40px;
+.bookmarks-page .pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary-accent);
+  background: var(--primary-bg);
+  color: var(--primary-accent);
+}
+
+.bookmarks-page .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bookmarks-page .page-numbers {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.bookmarks-page .page-btn {
+  min-width: 40px;
   height: 40px;
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--primary-accent);
-  border-radius: 50%;
-  margin: 0 auto 1rem;
-  animation: spin 1s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+  font-family: var(--primary-font);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.bookmarks-page .page-btn:hover {
+  border-color: var(--primary-accent);
+  background: var(--primary-bg);
 }
 
-.loading-state p {
+.bookmarks-page .page-btn.active {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: white;
+  font-weight: var(--font-weight-semibold);
+}
+
+.bookmarks-page .page-dots {
   color: var(--text-muted);
-  font-size: var(--font-size-md);
-  margin: 0;
+  padding: 0 0.5rem;
+  font-size: var(--font-size-sm);
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .bookmarks-page .scholarship-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
 @media (max-width: 768px) {
   .bookmarks-page {
-    padding: 1rem 0;
+    padding: 0.5rem 0 1.5rem;
   }
   
-  .content-section {
-    padding: 0 1rem;
+  .bookmarks-page .toolbar-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
   }
   
-  .section-header {
-    margin: 2rem 0 1rem 0;
+  .bookmarks-page .search-container {
+    min-width: auto;
+    max-width: none;
   }
   
-  .scholarship-grid {
+  .bookmarks-page .bookmarks-count {
+    align-self: flex-start;
+  }
+  
+  .bookmarks-page .scholarship-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
   
-  .scholarship-card {
+  .bookmarks-page .scholarship-card {
     padding: 1.25rem;
-    min-height: 240px;
+    min-height: 260px;
   }
   
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .bookmarks-page .modal-content {
+    margin: 0.5rem;
+    max-height: 95vh;
+  }
+  
+  .bookmarks-page .modal-header {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+  
+  .bookmarks-page .modal-body {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .bookmarks-page .modal-details-grid {
+    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
   
-  .bookmark-icon {
-    align-self: flex-end;
-    margin-top: -0.5rem;
+  .bookmarks-page .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 2rem 0 1.25rem;
   }
   
-  .empty-state {
-    padding: 3rem 1.5rem;
-    margin: 1rem 0;
+  .bookmarks-page .results-count {
+    font-size: var(--font-size-xs);
+  }
+  
+  .bookmarks-page .pagination {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .bookmarks-page .page-numbers {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+    margin: 0.5rem 0;
+  }
+  
+  .bookmarks-page .pagination-btn.prev,
+  .bookmarks-page .pagination-btn.next {
+    order: 2;
+    padding: 0.625rem 1rem;
   }
 }
 
 @media (max-width: 480px) {
-  .section-title {
+  .bookmarks-page .section-title {
     font-size: var(--font-size-lg);
   }
   
-  .scholarship-card {
-    min-height: 220px;
+  .bookmarks-page .modal-header h2 {
+    font-size: var(--font-size-lg);
   }
   
-  .card-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+  .bookmarks-page .detail-section h4 {
+    font-size: var(--font-size-md);
   }
   
-  .deadline-badge {
-    align-self: stretch;
-    justify-content: center;
+  .bookmarks-page .apply-btn {
+    padding: 0.875rem 1.25rem;
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .bookmarks-page .view-more-btn,
+  .bookmarks-page .pagination-btn,
+  .bookmarks-page .page-btn,
+  .bookmarks-page .bookmark-icon {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .bookmarks-page .modal-content {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .bookmarks-page .close-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .bookmarks-page .scholarship-card {
+    min-height: 300px;
   }
 }
