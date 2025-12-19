@@ -21,10 +21,6 @@ export default function Header({ user, onSidebarToggle }) {
 
   const dropdownRef = useRef(null);
 
-  /* =========================
-     HANDLERS
-  ========================== */
-
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
@@ -38,10 +34,6 @@ export default function Header({ user, onSidebarToggle }) {
     localStorage.removeItem("user");
     navigate("/");
   };
-
-  /* =========================
-     AVATAR HELPERS
-  ========================== */
 
   const getAvatarInitials = () => {
     if (!user?.first_name && !user?.last_name) return "U";

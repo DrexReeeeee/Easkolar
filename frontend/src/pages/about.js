@@ -198,7 +198,7 @@ export default function About() {
                 Ensures the platform is accessible, responsive, and student-friendly.
               </p>
               <div className="member-socials">
-                <a href="#" className="social-placeholder" title="GitHub (Coming Soon)">GitHub</a>
+                <a href="https://github.com/osbev" className="social-placeholder" title="GitHub">GitHub</a>
                 <a href="#" className="social-placeholder" title="LinkedIn (Coming Soon)">LinkedIn</a>
                 <a href="#" className="social-placeholder" title="Portfolio (Coming Soon)">Portfolio</a>
               </div>
@@ -213,8 +213,8 @@ export default function About() {
                 Builds the robust systems that power our intelligent matching algorithms.
               </p>
               <div className="member-socials">
-                <a href="#" className="social-placeholder" title="GitHub (Coming Soon)">GitHub</a>
-                <a href="#" className="social-placeholder" title="LinkedIn (Coming Soon)">LinkedIn</a>
+                <a href="https://github.com/DrexReeeeee" className="social-placeholder" title="GitHub">GitHub</a>
+                <a href="https://www.linkedin.com/in/drixy-reece-irish-nacu-49627b108/" className="social-placeholder" title="LinkedIn">LinkedIn</a>
                 <a href="#" className="social-placeholder" title="Portfolio (Coming Soon)">Portfolio</a>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* Footer (consistent with home) */}
+      {/* Footer */}
       <footer className="minimal-footer">
         <div className="page-wrapper">
           <div className="footer-content">
